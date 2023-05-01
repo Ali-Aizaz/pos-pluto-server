@@ -1,21 +1,21 @@
 const advancedResults = async (model, request, populate) => {
-  let query = {};
+  const query = {};
   // Copy request
   const reqQuery = { ...request };
 
   if (reqQuery.select) {
-    query.select = reqQuery.select.split(",").map((v) => {
+    query.select = reqQuery.select.split(',').map((v) => {
       return { [v]: true };
     });
-    delete reqQuery["select"];
+    delete reqQuery.select;
   }
   // Sort
   if (reqQuery.order) {
-    const orderBy = reqQuery.order.split(",");
+    const orderBy = reqQuery.order.split(',');
     query.orderBy = { [orderBy[0]]: orderBy[1] };
-    delete reqQuery["order"];
+    delete reqQuery.order;
   } else {
-    query.orderBy = { createdAt: "desc" };
+    query.orderBy = { createdAt: 'desc' };
   }
   if (populate && Object.keys(populate).length !== 0) {
     query.include = populate;
@@ -23,18 +23,18 @@ const advancedResults = async (model, request, populate) => {
 
   // Pagination
   const page = parseInt(reqQuery.page, 10) || 1;
-  delete reqQuery["page"];
+  delete reqQuery.page;
   const limit = parseInt(reqQuery.limit, 10) || 25;
-  delete reqQuery["limit"];
+  delete reqQuery.limit;
   const startIndex = (page - 1) * limit;
 
   // Create query.where object
   // Create operators ($gt, $gte, etc)
   for (const key in reqQuery) {
     if (/\b(gt|gte|lt|lte|in)\b/g.test(reqQuery[key])) {
-      const operator = reqQuery[key].split(",");
+      const operator = reqQuery[key].split(',');
       reqQuery[key] = {
-        [operator[0]]: parseInt(operator[1]),
+        [operator[0]]: parseInt(operator[1], 10),
       };
     }
   }
@@ -42,7 +42,7 @@ const advancedResults = async (model, request, populate) => {
   query.where = { ...reqQuery };
   console.log(query);
   const { orderBy, ...rest } = { ...query };
-  // const total = await model.count(rest);
+  const total = await model.count(rest);
   query.skip = startIndex;
   query.take = limit;
   // Executing query
@@ -52,8 +52,8 @@ const advancedResults = async (model, request, populate) => {
     // Pagination result
     const pagination = {
       currentPage: page,
-      totalPages: Math.ceil(1 / limit),
-      limit: limit,
+      totalPages: Math.ceil(total / limit),
+      limit,
     };
 
     return {

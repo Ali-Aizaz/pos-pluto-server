@@ -1,4 +1,7 @@
 -- CreateEnum
+CREATE TYPE "State" AS ENUM ('SOLD', 'RETURNED', 'WARRANTY');
+
+-- CreateEnum
 CREATE TYPE "Provider" AS ENUM ('EMAIL', 'GOOGLE');
 
 -- CreateEnum
@@ -13,11 +16,12 @@ CREATE TABLE "User" (
     "name" VARCHAR(255) NOT NULL,
     "email" VARCHAR(255) NOT NULL,
     "password" VARCHAR(255) NOT NULL,
+    "image" VARCHAR(255),
     "provider" "Provider" NOT NULL,
-    "roles" "Role" NOT NULL DEFAULT 'STOREOWNER',
+    "role" "Role" NOT NULL DEFAULT 'STOREOWNER',
     "resetPasswordToken" VARCHAR(255),
-    "lastCredentialChange" TIMESTAMPTZ(6) DEFAULT CURRENT_TIMESTAMP,
-    "resetPasswordExpire" TIMESTAMPTZ(6),
+    "lastCredentialChange" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "resetPasswordExpire" TIMESTAMPTZ(6) NOT NULL,
     "emailVerificationToken" VARCHAR(255),
     "isEmailVerified" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -30,6 +34,7 @@ CREATE TABLE "User" (
 CREATE TABLE "Product" (
     "id" UUID NOT NULL,
     "name" VARCHAR(255) NOT NULL,
+    "image" VARCHAR(255),
     "createdAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMPTZ(6) NOT NULL,
     "categoryId" UUID NOT NULL,
@@ -61,7 +66,7 @@ CREATE TABLE "Category" (
 -- CreateTable
 CREATE TABLE "Inventory" (
     "id" UUID NOT NULL,
-    "count" INTEGER NOT NULL,
+    "count" INTEGER NOT NULL DEFAULT 1,
     "productId" UUID NOT NULL,
     "createdAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMPTZ(6) NOT NULL,
@@ -70,15 +75,29 @@ CREATE TABLE "Inventory" (
 );
 
 -- CreateTable
-CREATE TABLE "Sale" (
+CREATE TABLE "Order" (
     "id" UUID NOT NULL,
     "price" INTEGER NOT NULL,
-    "count" INTEGER NOT NULL,
+    "count" INTEGER NOT NULL DEFAULT 1,
+    "state" "State" NOT NULL DEFAULT 'SOLD',
     "createdAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMPTZ(6) NOT NULL,
     "productId" UUID NOT NULL,
 
-    CONSTRAINT "Sale_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Order_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Store" (
+    "id" UUID NOT NULL,
+    "name" VARCHAR(255) NOT NULL,
+    "description" VARCHAR(255) NOT NULL,
+    "image" VARCHAR(255),
+    "createdAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMPTZ(6) NOT NULL,
+    "ownerId" UUID NOT NULL,
+
+    CONSTRAINT "Store_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -94,4 +113,7 @@ ALTER TABLE "ProductData" ADD CONSTRAINT "ProductData_productId_fkey" FOREIGN KE
 ALTER TABLE "Inventory" ADD CONSTRAINT "Inventory_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Sale" ADD CONSTRAINT "Sale_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Order" ADD CONSTRAINT "Order_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Store" ADD CONSTRAINT "Store_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

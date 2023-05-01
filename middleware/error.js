@@ -1,15 +1,15 @@
-const errorHandler = (err, req, res, next) => {
-  let error = { ...err };
+const errorHandler = (err, req, res) => {
+  const error = { ...err };
   const response = {
     success: false,
-    error: "Server Error",
+    error: 'Server Error',
   };
   let errorCode = error.statusCode || 400;
   error.message = err.message;
   // Log to console for dev
 
   console.log(error);
-  if (error.code === "P2002") {
+  if (error.code === 'P2002') {
     response.error = `There is a unique constraint violation, ${error.meta.target}`;
   } else if (error.meta) {
     if (error.meta.message) response.error = error.meta.message;

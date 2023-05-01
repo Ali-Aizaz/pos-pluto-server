@@ -1,8 +1,7 @@
-const { user } = require("../config");
-const ErrorHandler = require("../middleware/errorHandler");
-const { verifyToken } = require("../utils/issueJwt");
-const { cleanUser } = require("../utils/cleanUser");
-const asyncHandler = require("./asyncHandler");
+const { user } = require('../config');
+const ErrorHandler = require('./errorHandler');
+const { verifyToken } = require('../utils/issueJwt');
+const asyncHandler = require('./asyncHandler');
 
 const protect = asyncHandler(async (req, res, next) => {
   let token;
@@ -10,38 +9,37 @@ const protect = asyncHandler(async (req, res, next) => {
     token = req.headers.authorization;
   }
   if (!token)
-    return next(new ErrorHandler("Not authorized to access this route", 401));
+    return next(new ErrorHandler('Not authorized to access this route', 401));
   try {
     const decoded = verifyToken(token);
-    req.user = cleanUser(
-      await user.findFirst({
-        where: {
-          AND: [
-            { id: decoded.sub },
-            {
-              lastCredentialChange: {
-                lte: new Date(decoded.iat).toISOString(),
-              },
+    req.user = await user.findFirst({
+      where: {
+        AND: [
+          { id: decoded.sub },
+          {
+            lastCredentialChange: {
+              lte: new Date(decoded.iat).toISOString(),
             },
-          ],
-        },
-      })
-    );
+          },
+        ],
+      },
+    });
     if (!req.user) {
-      return next(new ErrorHandler("Invalid Tokens", 401));
+      return next(new ErrorHandler('Invalid Tokens', 401));
     }
-    next();
+    delete user.password;
+    return next();
   } catch (err) {
     console.log(err);
-    return next(new ErrorHandler("Not authorized to access this route", 401));
+    return next(new ErrorHandler('Not authorized to access this route', 401));
   }
 });
 
 exports.isAdmin = (req, res, next) => {
-  if (req.user.roles !== "ADMIN") {
-    return next(new ErrorHandler("Not authorized to access this route", 401));
+  if (req.user.roles !== 'ADMIN') {
+    return next(new ErrorHandler('Not authorized to access this route', 401));
   }
-  next();
+  return next();
 };
 
 // exports.isActive = async (req, res, next) => {

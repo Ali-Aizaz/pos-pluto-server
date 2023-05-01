@@ -30,15 +30,11 @@ const logIn = asyncHandler(async (req, res, next) => {
       id: true,
       name: true,
       email: true,
-      description: true,
       provider: true,
-      walletId: true,
-      isEmailVerified: true,
       createdAt: true,
       updatedAt: true,
-      flintBalance: true,
-      maticBalance: true,
       password: true,
+      isEmailVerified: true,
     },
   });
   if (!result) {
