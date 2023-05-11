@@ -1,7 +1,7 @@
 const { user } = require('../config');
-const ErrorHandler = require('./errorHandler');
+const ErrorHandler = require('./ErrorHandler');
 const { verifyToken } = require('../utils/issueJwt');
-const asyncHandler = require('./asyncHandler');
+const asyncHandler = require('./AsyncHandler');
 
 const protect = asyncHandler(async (req, res, next) => {
   let token;

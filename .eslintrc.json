@@ -15,6 +15,9 @@
   "parserOptions": {
     "ecmaVersion": "latest"
   },
+  "compilerOptions": {
+    "forceConsistentCasingInFileNames": false
+  },
   "plugins": ["simple-import-sort"],
   "rules": {
     "import/extensions": [

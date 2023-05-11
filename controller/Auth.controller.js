@@ -1,8 +1,8 @@
 const bcrypt = require('bcrypt');
-const asyncHandler = require('../middleware/asyncHandler');
+const asyncHandler = require('../middleware/AsyncHandler');
 const { issueJWT } = require('../utils/issueJwt');
 const { user } = require('../config');
-const ErrorHandler = require('../middleware/errorHandler');
+const ErrorHandler = require('../middleware/ErrorHandler');
 const { sendEmail } = require('../utils/sendEmail');
 
 const signUp = asyncHandler(async (req, res) => {

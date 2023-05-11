@@ -9,21 +9,24 @@ datasource db {
 }
 
 model User {
-  id                     String   @id @default(uuid()) @db.VarChar(36)
-  name                   String   @db.VarChar(255)
-  email                  String   @db.VarChar(255)
-  password               String   @db.VarChar(255)
-  image                  String?  @db.VarChar(255)
+  id                     String      @id @default(uuid()) @db.VarChar(36)
+  name                   String      @db.VarChar(255)
+  email                  String      @db.VarChar(255)
+  password               String      @db.VarChar(255)
+  image                  String?     @db.VarChar(255)
   provider               Provider
-  role                   Role     @default(STOREOWNER)
-  resetPasswordToken     String?  @db.VarChar(255)
-  lastCredentialChange   DateTime @default(now()) @db.Timestamp(6)
-  resetPasswordExpire    DateTime @db.Timestamp(6)
-  emailVerificationToken String?  @db.VarChar(255)
-  isEmailVerified        Boolean  @default(false)
-  createdAt              DateTime @default(now()) @db.Timestamp(6)
-  updatedAt              DateTime @updatedAt @db.Timestamp(6)
+  role                   Role        @default(STOREOWNER)
+  resetPasswordToken     String?     @db.VarChar(255)
+  lastCredentialChange   DateTime    @default(now()) @db.Timestamp(6)
+  resetPasswordExpire    DateTime    @db.Timestamp(6)
+  emailVerificationToken String?     @db.VarChar(255)
+  isEmailVerified        Boolean     @default(false)
+  createdAt              DateTime    @default(now()) @db.Timestamp(6)
+  updatedAt              DateTime    @updatedAt @db.Timestamp(6)
   store                  Store[]
+  Product                Product[]
+  Inventory              Inventory[]
+  Order                  Order[]
 
   @@unique([email])
 }
@@ -34,20 +37,23 @@ model Product {
   image       String?       @db.VarChar(255)
   createdAt   DateTime      @default(now()) @db.Timestamp(6)
   updatedAt   DateTime      @updatedAt @db.Timestamp(6)
-  categoryId  String        @db.VarChar(191)
+  categoryId  String        @db.VarChar(36)
+  ownerId     String        @db.VarChar(36)
+  count       Int           @default(1) @db.Int
+  owner       User          @relation(fields: [ownerId], references: [id])
   category    Category      @relation(fields: [categoryId], references: [id])
-  productData ProductData[]
+  details     Json
   inventory   Inventory[]
   order       Order[]
+  ProductData ProductData[]
 
   @@index([categoryId])
+  @@index([ownerId])
 }
 
 model ProductData {
   id        String  @id @default(uuid()) @db.VarChar(36)
-  type      Type    @default(STRING)
-  field     String  @db.VarChar(255)
-  value     String  @db.VarChar(255)
+  name      String  @db.VarChar(255)
   productId String  @db.VarChar(36)
   product   Product @relation(fields: [productId], references: [id])
 
@@ -65,12 +71,15 @@ model Category {
 model Inventory {
   id        String   @id @default(uuid()) @db.VarChar(36)
   count     Int      @default(1) @db.Int
+  userId    String   @db.VarChar(36)
+  owner     User     @relation(fields: [userId], references: [id])
   productId String   @db.VarChar(36)
   createdAt DateTime @default(now()) @db.Timestamp(6)
   updatedAt DateTime @updatedAt @db.Timestamp(6)
   product   Product  @relation(fields: [productId], references: [id])
 
   @@index([productId])
+  @@index([userId])
 }
 
 model Order {
@@ -80,10 +89,13 @@ model Order {
   state     State    @default(SOLD)
   createdAt DateTime @default(now()) @db.Timestamp(6)
   updatedAt DateTime @updatedAt @db.Timestamp(6)
+  userId    String   @db.VarChar(36)
+  owner     User     @relation(fields: [userId], references: [id])
   productId String   @db.VarChar(36)
   product   Product  @relation(fields: [productId], references: [id])
 
   @@index([productId])
+  @@index([userId])
 }
 
 model Store {

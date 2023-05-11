@@ -1,7 +1,8 @@
 const bcrypt = require('bcrypt');
+const { default: StatusCode } = require('status-code-enum');
 const { user } = require('../config');
-const asyncHandler = require('../middleware/asyncHandler');
-const ErrorHandler = require('../middleware/errorHandler');
+const asyncHandler = require('../middleware/AsyncHandler');
+const ErrorHandler = require('../middleware/ErrorHandler');
 const sendEmail = require('../utils/sendEmail');
 const { issueJWT } = require('../utils/issueJwt');
 
@@ -18,17 +19,22 @@ const verifyEmail = asyncHandler(async (req, res, next) => {
     },
   });
   if (!updatedUser) {
-    return next(new ErrorHandler('Invalid token', 401));
+    return next(
+      new ErrorHandler('Invalid token', StatusCode.ClientErrorUnauthorized)
+    );
   }
 
-  return res
-    .status(200)
-    .json({ success: true, result: 'Email is successfully verified ' });
+  return res.json({ result: 'Email is successfully verified ' });
 });
 
 const getUser = asyncHandler(async (req, res, next) => {
   if (!req.params.email) {
-    return next(new ErrorHandler('Please provide an email', 400));
+    return next(
+      new ErrorHandler(
+        'Please provide an email',
+        StatusCode.ClientErrorBadRequest
+      )
+    );
   }
 
   const selectedUser = await user.findUnique({
@@ -43,13 +49,12 @@ const getUser = asyncHandler(async (req, res, next) => {
   });
 
   if (!selectedUser) {
-    return next(new ErrorHandler('User not found', 404));
+    return next(
+      new ErrorHandler('User not found', StatusCode.ClientErrorNotFound)
+    );
   }
 
-  return res.status(200).json({
-    success: true,
-    result: selectedUser,
-  });
+  return res.json(selectedUser);
 });
 
 const getEmailVerificationToken = () => {
@@ -68,7 +73,12 @@ const getEmailVerificationToken = () => {
 const sendVerificationEmail = asyncHandler(async (req, res, next) => {
   const { isEmailVerified, email, id, name } = req.user;
   if (isEmailVerified) {
-    return next(new ErrorHandler('That email is already verified', 409));
+    return next(
+      new ErrorHandler(
+        'That email is already verified',
+        StatusCode.ClientErrorConflict
+      )
+    );
   }
 
   // Get reset token
@@ -94,14 +104,20 @@ const sendVerificationEmail = asyncHandler(async (req, res, next) => {
       text: `Hi ${name}, your Verification Url: ${verificationUrl}`,
     });
 
-    return res.json({ success: true });
+    return res.status(StatusCode.SuccessOK).end();
   } catch (err) {
     console.log(err);
     await user.update({
       where: { id },
       data: { emailVerificationToken: null, validateBeforeSave: false },
     });
-    return next(new ErrorHandler('Email could not be sent', 400));
+
+    return next(
+      new ErrorHandler(
+        'Email could not be sent',
+        StatusCode.ClientErrorBadRequest
+      )
+    );
   }
 });
 
@@ -109,18 +125,20 @@ const isEmailAvailable = asyncHandler(async (req, res) => {
   const result = await user.findUnique({
     where: { email: req.params.email },
   });
-  return res.status(200).json({ success: true, result: !result });
+  return res.json({ result: !result });
 });
 
 const changePassword = asyncHandler(async (req, res, next) => {
   const selectedUser = await user.findUnique({ email: req.email });
   let isValid = true;
+
   if (!req.user.role === 'ADMIN') {
     isValid = await bcrypt.compare(
       req.body.currentPassword,
       selectedUser.password
     );
   }
+
   if (isValid) {
     const hash = await bcrypt.hash(req.body.newPassword, 10);
     await user.update({
@@ -130,17 +148,21 @@ const changePassword = asyncHandler(async (req, res, next) => {
         password: hash,
       },
     });
+
     const jwt = issueJWT(req.user);
     res.set({
       'content-type': 'application/json',
       'content-length': '10000',
       authorization: jwt.token,
     });
-    return res.json({
-      success: true,
-    });
+
+    return res.status(StatusCode.SuccessOK).end();
   }
-  return next(new ErrorHandler('Invalid Password'), 401);
+
+  return next(
+    new ErrorHandler('Invalid Password'),
+    StatusCode.ClientErrorUnauthorized
+  );
 });
 
 module.exports = {
