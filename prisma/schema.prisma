@@ -26,7 +26,6 @@ model User {
   store                  Store[]
   Product                Product[]
   Inventory              Inventory[]
-  Order                  Order[]
 
   @@unique([email])
 }
@@ -34,6 +33,7 @@ model User {
 model Product {
   id          String        @id @default(uuid()) @db.VarChar(36)
   name        String        @db.VarChar(255)
+  price       Int           @db.Int
   image       String?       @db.VarChar(255)
   createdAt   DateTime      @default(now()) @db.Timestamp(6)
   updatedAt   DateTime      @updatedAt @db.Timestamp(6)
@@ -44,7 +44,6 @@ model Product {
   category    Category      @relation(fields: [categoryId], references: [id])
   details     Json
   inventory   Inventory[]
-  order       Order[]
   ProductData ProductData[]
 
   @@index([categoryId])
@@ -69,33 +68,22 @@ model Category {
 }
 
 model Inventory {
-  id        String   @id @default(uuid()) @db.VarChar(36)
-  count     Int      @default(1) @db.Int
-  userId    String   @db.VarChar(36)
-  owner     User     @relation(fields: [userId], references: [id])
-  productId String   @db.VarChar(36)
-  createdAt DateTime @default(now()) @db.Timestamp(6)
-  updatedAt DateTime @updatedAt @db.Timestamp(6)
-  product   Product  @relation(fields: [productId], references: [id])
+  id        String      @id @default(uuid()) @db.VarChar(36)
+  count     Int         @default(1) @db.Int
+  state     State       @default(SOLD)
+  createdAt DateTime    @default(now()) @db.Timestamp(6)
+  updatedAt DateTime    @updatedAt @db.Timestamp(6)
+  ownerId   String      @db.VarChar(36)
+  owner     User        @relation(fields: [ownerId], references: [id])
+  productId String      @db.VarChar(36)
+  product   Product     @relation(fields: [productId], references: [id])
+  parent    Inventory?  @relation(name: "Returns", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  returns   Inventory[] @relation(name: "Returns")
+  parentId  String?     @db.VarChar(36)
 
   @@index([productId])
-  @@index([userId])
-}
-
-model Order {
-  id        String   @id @default(uuid()) @db.VarChar(36)
-  price     Int      @db.Int
-  count     Int      @default(1) @db.Int
-  state     State    @default(SOLD)
-  createdAt DateTime @default(now()) @db.Timestamp(6)
-  updatedAt DateTime @updatedAt @db.Timestamp(6)
-  userId    String   @db.VarChar(36)
-  owner     User     @relation(fields: [userId], references: [id])
-  productId String   @db.VarChar(36)
-  product   Product  @relation(fields: [productId], references: [id])
-
-  @@index([productId])
-  @@index([userId])
+  @@index([ownerId])
+  @@index([parentId])
 }
 
 model Store {

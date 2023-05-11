@@ -27,8 +27,9 @@ const verifyEmail = asyncHandler(async (req, res, next) => {
   return res.json({ result: 'Email is successfully verified ' });
 });
 
-const getUser = asyncHandler(async (req, res, next) => {
-  if (!req.params.email) {
+const getUserByEmail = asyncHandler(async (req, res, next) => {
+  const { email } = req.body;
+  if (!email) {
     return next(
       new ErrorHandler(
         'Please provide an email',
@@ -38,9 +39,10 @@ const getUser = asyncHandler(async (req, res, next) => {
   }
 
   const selectedUser = await user.findUnique({
-    where: { email: req.params.email },
+    where: { email },
     select: {
       email: true,
+      image: true,
       id: true,
       createdAt: true,
       isEmailVerified: true,
@@ -165,10 +167,15 @@ const changePassword = asyncHandler(async (req, res, next) => {
   );
 });
 
+const currentUser = asyncHandler(async (req, res) => {
+  res.json(req.user);
+});
+
 module.exports = {
   isEmailAvailable,
   sendVerificationEmail,
-  getUser,
+  getUserByEmail,
   verifyEmail,
   changePassword,
+  currentUser,
 };

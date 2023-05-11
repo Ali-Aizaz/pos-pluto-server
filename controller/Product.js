@@ -1,6 +1,6 @@
 const { default: StatusCode } = require('status-code-enum');
 const asyncHandler = require('../middleware/AsyncHandler');
-const { product, productData } = require('../config');
+const { product, productData, category } = require('../config');
 const advancedResults = require('../middleware/AdvancedResults');
 const ErrorHandler = require('../middleware/ErrorHandler');
 
@@ -34,7 +34,7 @@ const getProductById = asyncHandler(async (req, res, next) => {
 });
 
 const createProduct = asyncHandler(async (req, res, next) => {
-  const { name, content, count } = req.query;
+  const { name, content, count, category: providedCategory, price } = req.query;
 
   if (!name || !content)
     return next(
@@ -54,11 +54,21 @@ const createProduct = asyncHandler(async (req, res, next) => {
       );
   }
 
+  const categoryId = await category.upsert({
+    where: { name: providedCategory },
+    create: {
+      name: providedCategory,
+    },
+    select: { id: true },
+  });
+
   const newProduct = await product.create({
     data: {
       name,
       details: content,
       count,
+      categoryId: categoryId.id,
+      price,
     },
   });
 
