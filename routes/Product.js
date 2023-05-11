@@ -7,6 +7,7 @@ const {
 
 router.get('/products', getProducts);
 router.get('/products/:id', getProductById);
+
 router.post('/products', createProduct);
 
 module.exports = router;

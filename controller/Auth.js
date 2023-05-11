@@ -5,7 +5,7 @@ const { user } = require('../config');
 const ErrorHandler = require('../middleware/ErrorHandler');
 const { sendEmail } = require('../utils/sendEmail');
 
-const signUp = asyncHandler(async (req, res) => {
+const signUpWithIdPassword = asyncHandler(async (req, res) => {
   const newUser = await user.create({
     data: {
       name: req.body.name,
@@ -23,7 +23,7 @@ const signUp = asyncHandler(async (req, res) => {
   });
 });
 
-const logIn = asyncHandler(async (req, res, next) => {
+const logInWithIdPassword = asyncHandler(async (req, res, next) => {
   const result = await user.findUnique({
     where: { email: req.body.email },
     select: {
@@ -267,8 +267,8 @@ const resetPassword = asyncHandler(async (req, res, next) => {
 // });
 
 module.exports = {
-  signUp,
-  logIn,
+  signUpWithIdPassword,
+  logInWithIdPassword,
   // GoogleAuthURL,
   getEmailProvider,
   resetPassword,
