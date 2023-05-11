@@ -1,15 +1,15 @@
 const {
   signUpWithIdPassword,
-  signInWithIdPassword,
+  logInWithIdPassword,
   resetPassword,
   sendPasswordResetEmail,
   getEmailProvider,
-} = require('../controller/auth');
+} = require('../controller/Auth');
 
 const router = require('express').Router();
 
 router.post('/auth/signup', signUpWithIdPassword);
-router.post('/auth/signin', signInWithIdPassword);
+router.post('/auth/signin', logInWithIdPassword);
 
 router.get('/auth/get-email-provider', getEmailProvider);
 

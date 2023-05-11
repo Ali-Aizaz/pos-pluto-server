@@ -18,7 +18,7 @@ model User {
   role                   Role        @default(STOREOWNER)
   resetPasswordToken     String?     @db.VarChar(255)
   lastCredentialChange   DateTime    @default(now()) @db.Timestamp(6)
-  resetPasswordExpire    DateTime    @db.Timestamp(6)
+  resetPasswordExpire    DateTime    @default(now()) @db.Timestamp(6)
   emailVerificationToken String?     @db.VarChar(255)
   isEmailVerified        Boolean     @default(false)
   createdAt              DateTime    @default(now()) @db.Timestamp(6)

@@ -4,6 +4,7 @@ const { issueJWT } = require('../utils/issueJwt');
 const { user } = require('../config');
 const ErrorHandler = require('../middleware/ErrorHandler');
 const { sendEmail } = require('../utils/sendEmail');
+const { default: StatusCode } = require('status-code-enum');
 
 const signUpWithIdPassword = asyncHandler(async (req, res) => {
   const newUser = await user.create({
@@ -11,14 +12,15 @@ const signUpWithIdPassword = asyncHandler(async (req, res) => {
       name: req.body.name,
       email: req.body.email,
       password: bcrypt.hashSync(req.body.password, 10),
-      flintBalance: 5000,
-      provider: req.provider || 'email',
+      provider: req.provider || 'EMAIL',
+      resetPasswordExpire: new Date().toISOString(),
     },
   });
   const jwt = issueJWT(newUser.id);
+
   res.set({ Authorization: jwt.token });
-  return res.status(200).send({
-    success: true,
+
+  return res.status(StatusCode.SuccessOK).json({
     result: newUser,
   });
 });
@@ -136,7 +138,7 @@ const getResetPasswordToken = () => {
   return { resetPasswordToken, resetPasswordExpire };
 };
 
-const forgotPassword = asyncHandler(async (req, res, next) => {
+const sendPasswordResetEmail = asyncHandler(async (req, res, next) => {
   const selectedUser = await user.findUnique({
     where: { email: req.body.email },
   });
@@ -272,6 +274,6 @@ module.exports = {
   // GoogleAuthURL,
   getEmailProvider,
   resetPassword,
-  forgotPassword,
+  sendPasswordResetEmail,
   // GoogleUser,
 };

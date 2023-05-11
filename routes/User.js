@@ -1,4 +1,5 @@
 const { currentUser, getUserByEmail } = require('../controller/User');
+const { protect } = require('../middleware/Protect');
 
 const router = require('express').Router();
 

@@ -1,8 +1,8 @@
 const { default: StatusCode } = require('status-code-enum');
-const { inventory, product, inventory } = require('../config');
+const { inventory, product } = require('../config');
 const asyncHandler = require('../middleware/AsyncHandler');
 const ErrorHandler = require('../middleware/ErrorHandler');
-const advancedResult = require('../middleware/AdvancedResult');
+const advancedResult = require('../middleware/AdvancedResults');
 
 const sellProduct = asyncHandler(async (req, res, next) => {
   const { productId, count } = req.query;
@@ -108,7 +108,7 @@ const manageInventory = asyncHandler(async (req, res, next) => {
   return;
 });
 
-const returnProduct = await asyncHandler(async (req, res, next) => {
+const returnProduct = asyncHandler(async (req, res, next) => {
   req.returnType = 'RETURNED';
   await manageInventory(req, res, next);
   await product.update({
@@ -125,7 +125,7 @@ const returnProduct = await asyncHandler(async (req, res, next) => {
   res.status(StatusCode.SuccessOK).end();
 });
 
-const claimWarrenty = await asyncHandler(async (req, res, next) => {
+const claimWarrenty = asyncHandler(async (req, res, next) => {
   req.returnType = 'WARRANTY';
 
   await manageInventory(req, res, next);

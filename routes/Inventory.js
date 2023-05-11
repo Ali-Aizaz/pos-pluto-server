@@ -4,6 +4,7 @@ const {
   claimWarrenty,
   returnProduct,
 } = require('../controller/Inventory');
+const { protect } = require('../middleware/Protect');
 
 const router = require('express').Router();
 

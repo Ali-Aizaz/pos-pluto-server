@@ -1,4 +1,4 @@
-const errorHandler = (err, req, res) => {
+const errorHandler = (err, req, res, next) => {
   const error = { ...err };
   const response = {
     success: false,
@@ -22,7 +22,7 @@ const errorHandler = (err, req, res) => {
     errorCode = 500;
   }
 
-  res.status(errorCode).json(response);
+  return res.status(errorCode).json(response);
 };
 
 module.exports = errorHandler;
