@@ -5,10 +5,6 @@ const cors = require('cors');
 const chalk = require('chalk');
 
 const errorHandler = require('./middleware/Error');
-const {
-  signUpWithIdPassword,
-  logInWithIdPassword,
-} = require('./controller/Auth');
 
 const app = express();
 
@@ -30,9 +26,7 @@ app.use((req, res, next) => {
   next();
 });
 
-require('./routes/index')(app);
-app.post('/api/v1/auth/signup', signUpWithIdPassword);
-app.post('/api/v1/auth/signin', logInWithIdPassword);
+require('./routes')(app);
 
 app.get('/api/v1/ip', (request, response) => response.send(request.ip));
 
