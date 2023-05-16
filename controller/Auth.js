@@ -26,8 +26,19 @@ const signUpWithIdPassword = asyncHandler(async (req, res) => {
 });
 
 const logInWithIdPassword = asyncHandler(async (req, res, next) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return next(
+      new ErrorHandler(
+        'Email and Password must be provided',
+        StatusCode.ClientErrorBadRequest
+      )
+    );
+  }
+
   const result = await user.findUnique({
-    where: { email: req.body.email },
+    where: { email },
     select: {
       id: true,
       name: true,
@@ -39,24 +50,35 @@ const logInWithIdPassword = asyncHandler(async (req, res, next) => {
       isEmailVerified: true,
     },
   });
+
   if (!result) {
-    return next(new ErrorHandler('Invalid Credentials', 404));
+    return next(
+      new ErrorHandler('Invalid Credentials', StatusCode.ClientErrorNotFound)
+    );
   }
+
   const isValid = bcrypt.compareSync(
     req.body.password.toString(),
     result.password
   );
 
-  if (!isValid) return next(new ErrorHandler('Invalid Credentials', 401));
+  if (!isValid)
+    return next(
+      new ErrorHandler(
+        'Invalid Credentials',
+        StatusCode.ClientErrorUnauthorized
+      )
+    );
+
   const jwt = issueJWT(result.id);
   res.set({
     Authorization: jwt.token,
   });
 
-  const { password, ...rest } = result;
-  return res.status(200).json({
-    success: true,
-    result: rest,
+  delete result.password;
+
+  return res.json({
+    result,
   });
 });
 
@@ -144,11 +166,20 @@ const sendPasswordResetEmail = asyncHandler(async (req, res, next) => {
   });
 
   if (!selectedUser) {
-    return next(new ErrorHandler('There is no user with that email', 404));
+    return next(
+      new ErrorHandler(
+        'There is no user with that email',
+        StatusCode.ClientErrorNotFound
+      )
+    );
   }
+
   if (selectedUser.provider === 'google') {
     return next(
-      new ErrorHandler('That user is not associated with an email account', 403)
+      new ErrorHandler(
+        'That user is not associated with an email account',
+        StatusCode.ClientErrorForbidden
+      )
     );
   }
 
@@ -192,7 +223,12 @@ const sendPasswordResetEmail = asyncHandler(async (req, res, next) => {
       { where: { email: req.body.email } }
     );
 
-    return next(new ErrorHandler('Email could not be sent', 500));
+    return next(
+      new ErrorHandler(
+        'Email could not be sent',
+        StatusCode.ServerErrorInternal
+      )
+    );
   }
 });
 
@@ -216,8 +252,11 @@ const resetPassword = asyncHandler(async (req, res, next) => {
   );
 
   if (!updatedUser) {
-    return next(new ErrorHandler('Invalid token', 401));
+    return next(
+      new ErrorHandler('Invalid token', StatusCode.ClientErrorUnauthorized)
+    );
   }
+
   const jwt = issueJWT(updatedUser.id);
   res.set({
     'content-type': 'application/json',

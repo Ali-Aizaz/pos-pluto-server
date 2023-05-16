@@ -9,9 +9,9 @@ datasource db {
 }
 
 model User {
-  id                     String      @id @default(uuid()) @db.VarChar(36)
+  id                     String      @id @unique @default(uuid()) @db.VarChar(36)
   name                   String      @db.VarChar(255)
-  email                  String      @db.VarChar(255)
+  email                  String      @unique @db.VarChar(255)
   password               String      @db.VarChar(255)
   image                  String?     @db.VarChar(255)
   provider               Provider
@@ -26,12 +26,10 @@ model User {
   store                  Store[]
   Product                Product[]
   Inventory              Inventory[]
-
-  @@unique([email])
 }
 
 model Product {
-  id          String        @id @default(uuid()) @db.VarChar(36)
+  id          String        @id @unique @default(uuid()) @db.VarChar(36)
   name        String        @db.VarChar(255)
   price       Int           @db.Int
   image       String?       @db.VarChar(255)
@@ -51,7 +49,7 @@ model Product {
 }
 
 model ProductData {
-  id        String  @id @default(uuid()) @db.VarChar(36)
+  id        String  @id @unique @default(uuid()) @db.VarChar(36)
   name      String  @db.VarChar(255)
   productId String  @db.VarChar(36)
   product   Product @relation(fields: [productId], references: [id])
@@ -60,7 +58,7 @@ model ProductData {
 }
 
 model Category {
-  id        String    @id @default(uuid()) @db.VarChar(36)
+  id        String    @id @unique @default(uuid()) @db.VarChar(36)
   name      String    @db.VarChar(255)
   createdAt DateTime  @default(now()) @db.Timestamp(6)
   updatedAt DateTime  @updatedAt @db.Timestamp(6)
@@ -68,7 +66,7 @@ model Category {
 }
 
 model Inventory {
-  id        String      @id @default(uuid()) @db.VarChar(36)
+  id        String      @id @unique @default(uuid()) @db.VarChar(36)
   count     Int         @default(1) @db.Int
   state     State       @default(SOLD)
   createdAt DateTime    @default(now()) @db.Timestamp(6)
@@ -87,7 +85,7 @@ model Inventory {
 }
 
 model Store {
-  id          String   @id @default(uuid()) @db.VarChar(36)
+  id          String   @id @unique @default(uuid()) @db.VarChar(36)
   name        String   @db.VarChar(255)
   description String   @db.VarChar(255)
   image       String?  @db.VarChar(255)
