@@ -4,10 +4,11 @@ const {
   getProductById,
   createProduct,
 } = require('../controller/Product');
+const { protect } = require('../middleware/Protect');
 
-router.get('/products', getProducts);
-router.get('/products/:id', getProductById);
+router.get('/products', protect, getProducts);
+router.get('/products/:id', protect, getProductById);
 
-router.post('/products', createProduct);
+router.post('/products', protect, createProduct);
 
 module.exports = router;
