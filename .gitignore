@@ -119,3 +119,4 @@ config/config.json
 .yarn/**               linguist-vendored
 
 ./yarn/cache
+.yarn/install-state.gz
