@@ -1,19 +1,25 @@
 const bcrypt = require('bcrypt');
 const asyncHandler = require('../middleware/AsyncHandler');
 const { issueJWT } = require('../utils/issueJwt');
-const { user } = require('../config');
+const { user, store } = require('../config');
 const ErrorHandler = require('../middleware/ErrorHandler');
 const { sendEmail } = require('../utils/sendEmail');
 const { default: StatusCode } = require('status-code-enum');
 
 const signUpWithIdPassword = asyncHandler(async (req, res) => {
-  const newUser = await user.create({
+  const newUser = await store.create({
     data: {
-      name: req.body.name,
-      email: req.body.email,
-      password: bcrypt.hashSync(req.body.password, 10),
-      provider: req.provider || 'EMAIL',
-      resetPasswordExpire: new Date().toISOString(),
+      name: req.body.storeName,
+      description: req.body.storeDescription,
+      user: {
+        create: {
+          name: req.body.name,
+          email: req.body.email,
+          password: bcrypt.hashSync(req.body.password, 10),
+          provider: req.provider || 'EMAIL',
+          resetPasswordExpire: new Date().toISOString(),
+        },
+      },
     },
   });
   const jwt = issueJWT(newUser.id);

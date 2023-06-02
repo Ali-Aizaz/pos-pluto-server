@@ -1,14 +1,12 @@
 const { default: StatusCode } = require('status-code-enum');
 const asyncHandler = require('../middleware/AsyncHandler');
-const { product, productData, category } = require('../config');
+const { product, category } = require('../config');
 const advancedResults = require('../middleware/AdvancedResults');
 const ErrorHandler = require('../middleware/ErrorHandler');
 
 const getProducts = asyncHandler(async (req, res) => {
-  req.query.userId = req.user.id;
-
   const populate = {
-    productData: { name: true },
+    category: true,
   };
 
   const result = await advancedResults(product, req.query, populate);
@@ -20,13 +18,12 @@ const getProductById = asyncHandler(async (req, res, next) => {
 
   if (!id) return next('product id required', StatusCode.ClientErrorBadRequest);
 
-  const result = await product({
+  const result = await product.findUnique({
     where: {
       id,
     },
-    orderBy: { createdAt: 'desc' },
     include: {
-      product: true,
+      category: true,
     },
   });
 
@@ -54,31 +51,51 @@ const createProduct = asyncHandler(async (req, res, next) => {
       );
   }
 
-  const categoryId = await category.upsert({
-    where: { name: providedCategory },
-    create: {
+  const selectedCategory = await category.findUnique({
+    where: {
       name: providedCategory,
     },
-    select: { id: true },
   });
 
-  const newProduct = await product.create({
-    data: {
-      name,
-      details: content,
-      count,
-      categoryId: categoryId.id,
-      price,
-    },
-  });
+  if (!selectedCategory) {
+    const newProduct = await category.create({
+      data: {
+        name: providedCategory,
+        categoryData: Object.keys(content),
+        product: {
+          create: {
+            name,
+            details: content,
+            count,
+            categoryId: categoryId.id,
+            price,
+          },
+        },
+      },
+      select: { product: true },
+    });
 
-  productData.createMany({
-    data: Object.keys(content).map((key) => {
-      return { productId: newProduct.id, name: key };
-    }),
-  });
+    return res.json(newProduct.product);
+  } else {
+    if (selectedCategory.categoryData !== Object.keys(content))
+      return next(
+        new ErrorHandler(
+          'invalid product fields',
+          StatusCode.ClientErrorBadRequest
+        )
+      );
+    const newProduct = await product.create({
+      data: {
+        name,
+        details: content,
+        count,
+        categoryId: categoryId.id,
+        price,
+      },
+    });
 
-  return res.json(newProduct);
+    return res.json(newProduct);
+  }
 });
 
 module.exports = { getProducts, getProductById, createProduct };

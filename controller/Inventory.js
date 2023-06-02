@@ -1,8 +1,9 @@
 const { default: StatusCode } = require('status-code-enum');
-const { inventory, product } = require('../config');
+const { inventory, product, returned, warranty, sold } = require('../config');
 const asyncHandler = require('../middleware/AsyncHandler');
 const ErrorHandler = require('../middleware/ErrorHandler');
 const advancedResult = require('../middleware/AdvancedResults');
+const prisma = require('../config');
 
 const sellProduct = asyncHandler(async (req, res, next) => {
   const { productId, count } = req.query;
@@ -12,8 +13,8 @@ const sellProduct = asyncHandler(async (req, res, next) => {
       new ErrorHandler('productId required', StatusCode.ClientErrorBadRequest)
     );
 
-  const selectedProduct = await product.findUnique({
-    where: { id: productId },
+  const selectedProduct = await inventory.findUnique({
+    where: { productId_storeId: { productId, storeId: req.user.storeId } },
   });
 
   if (!selectedProduct)
@@ -29,27 +30,26 @@ const sellProduct = asyncHandler(async (req, res, next) => {
       )
     );
 
-  const result = await inventory.create({
-    data: {
-      count,
-      productId,
-      ownerId: req.user.id,
-    },
-    include: {
-      product,
-    },
-  });
-
-  await product.update({
-    where: {
-      id: productId,
-    },
-    data: {
-      count: {
-        decrement: count,
+  const [result] = await prisma.$transaction([
+    sold.create({
+      data: {
+        count,
+        productId,
+        storeId: req.user.storeId,
       },
-    },
-  });
+      include: {
+        product,
+      },
+    }),
+    inventory.update({
+      where: { productId_storeId: { productId, storeId: req.user.storeId } },
+      data: {
+        count: {
+          decrement: count,
+        },
+      },
+    }),
+  ]);
 
   return res.json(result);
 });
@@ -59,78 +59,69 @@ const getInventory = asyncHandler(async (req, res) => {
     product: true,
   };
 
-  req.query.ownerId = req.user.id;
+  req.query.storeId = req.user.storeId;
 
-  const inventory = await advancedResult(inventory, req.query, populate);
+  const result = await advancedResult(inventory, req.query, populate);
 
-  res.json(inventory);
+  res.json(result);
 });
 
 const manageInventory = asyncHandler(async (req, res, next) => {
-  const { inventoryId, count } = req.query;
+  const { productId, count } = req.body;
+  const { modal } = req;
 
-  const givenCount = count || 1;
-
-  if (!inventoryId)
+  if (!productId || !count)
     return next(
       new ErrorHandler('Incomplete Fields', StatusCode.ClientErrorBadRequest)
     );
 
-  const selectedInventory = await inventory.findUnique({
-    where: { id: inventoryId },
-  });
-
-  if (!selectedInventory)
-    return next(
-      new ErrorHandler(
-        'this invoice does not exist',
-        StatusCode.ClientErrorNotFound
-      )
-    );
-
-  if (selectedInventory.count < givenCount)
-    return next(
-      new ErrorHandler(
-        'Incorrect product return count',
-        StatusCode.ClientErrorForbidden
-      )
-    );
-
-  await inventory.create({
-    data: {
-      parentId: selectedInventory.id,
-      count: givenCount,
-      state: req.returnType,
-      ownerId: req.user.id,
-    },
-  });
-
-  return;
-});
-
-const returnProduct = asyncHandler(async (req, res, next) => {
-  req.returnType = 'RETURNED';
-  await manageInventory(req, res, next);
-  await product.update({
+  const selectSold = await sold.findUnique({
     where: {
-      id: selectedInventory.productId,
-    },
-    data: {
-      count: {
-        increment: givenCount,
+      productId_storeId: {
+        productId,
+        storeId: req.user.storeId,
       },
     },
   });
 
-  res.status(StatusCode.SuccessOK).end();
+  if (!selectSold)
+    return next(
+      ErrorHandler(
+        'No such product was sold',
+        StatusCode.ClientErrorPreconditionFailed
+      )
+    );
+
+  const updateInventory = await modal.upsert({
+    where: {
+      productId_storeId: {
+        productId,
+        storeId: req.user.storeId,
+      },
+    },
+    update: {
+      count: {
+        increment: count,
+      },
+    },
+    create: {
+      count: count,
+      productId: productId,
+      storeId: req.user.storeId,
+    },
+  });
+
+  return res.json(updateInventory);
+});
+
+const returnProduct = asyncHandler(async (req, res, next) => {
+  req.modal = returned;
+  manageInventory(req, res, next);
 });
 
 const claimWarrenty = asyncHandler(async (req, res, next) => {
-  req.returnType = 'WARRANTY';
-
-  await manageInventory(req, res, next);
-
-  res.status(StatusCode.SuccessOK).end();
+  req.modal = warranty;
+  manageInventory(req, res, next);
 });
 
 module.exports = {

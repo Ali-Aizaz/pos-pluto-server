@@ -48,7 +48,7 @@ model Product {
 
 model Category {
   id           String    @id @unique @default(uuid()) @db.Uuid
-  name         String    @db.VarChar(255)
+  name         String    @unique @db.VarChar(255)
   createdAt    DateTime  @default(now()) @db.Timestamp(6)
   updatedAt    DateTime  @updatedAt @db.Timestamp(6)
   product      Product[]
@@ -65,6 +65,8 @@ model Inventory {
   productId String   @db.Uuid
   product   Product  @relation(fields: [productId], references: [id])
 
+  @@unique([productId, storeId])
+  @@index([productId, storeId])
   @@index([productId])
   @@index([storeId])
 }
@@ -79,6 +81,8 @@ model Sold {
   productId String   @db.Uuid
   product   Product  @relation(fields: [productId], references: [id])
 
+  @@unique([productId, storeId])
+  @@index([productId, storeId])
   @@index([productId])
   @@index([storeId])
 }
@@ -93,6 +97,8 @@ model Returned {
   productId String   @db.Uuid
   product   Product  @relation(fields: [productId], references: [id])
 
+  @@unique([productId, storeId])
+  @@index([productId, storeId])
   @@index([productId])
   @@index([storeId])
 }
@@ -107,6 +113,8 @@ model Warranty {
   productId String   @db.Uuid
   product   Product  @relation(fields: [productId], references: [id])
 
+  @@unique([productId, storeId])
+  @@index([productId, storeId])
   @@index([productId])
   @@index([storeId])
 }
