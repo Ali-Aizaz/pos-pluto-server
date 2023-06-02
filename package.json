@@ -1,6 +1,9 @@
 {
   "name": "pos-pluto-server",
   "version": "1.0.0",
+  "prisma": {
+    "seed": "node prisma/seed"
+  },
   "description": "",
   "main": "index.js",
   "scripts": {
