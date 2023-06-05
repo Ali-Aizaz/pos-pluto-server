@@ -127,7 +127,9 @@ const isEmailAvailable = asyncHandler(async (req, res) => {
   const result = await user.findUnique({
     where: { email: req.params.email },
   });
-  return res.json({ result: !result });
+  return res
+    .status(result ? StatusCode.ClientErrorConflict : StatusCode.SuccessOK)
+    .end();
 });
 
 const changePassword = asyncHandler(async (req, res, next) => {

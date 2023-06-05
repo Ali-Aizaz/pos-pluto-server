@@ -26,9 +26,7 @@ const signUpWithIdPassword = asyncHandler(async (req, res) => {
 
   res.set({ Authorization: jwt.token });
 
-  return res.status(StatusCode.SuccessOK).json({
-    result: newUser,
-  });
+  return res.status(StatusCode.SuccessOK).json(newUser);
 });
 
 const logInWithIdPassword = asyncHandler(async (req, res, next) => {
@@ -83,19 +81,14 @@ const logInWithIdPassword = asyncHandler(async (req, res, next) => {
 
   delete result.password;
 
-  return res.json({
-    result,
-  });
+  return res.json(result);
 });
 
 const getEmailProvider = asyncHandler(async (req, res) => {
   const selectedUser = await user.findUnique({
     where: { email: req.body.email },
   });
-  return res.json({
-    success: true,
-    result: selectedUser ? selectedUser.provider : null,
-  });
+  return res.json(selectedUser ? selectedUser.provider : null);
 });
 
 // Getting Login URL
@@ -269,7 +262,7 @@ const resetPassword = asyncHandler(async (req, res, next) => {
     'content-length': '10000',
     Authorization: jwt.token,
   });
-  return res.json({ success: true });
+  return res.json('success');
 });
 
 // const sendVerificationEmail = asyncHandler(async (req, res, next) => {
