@@ -9,7 +9,7 @@ const errorHandler = require('./middleware/Error');
 const app = express();
 
 const corsOptions = {
-  origin: 'http://localhost:3000',
+  origin: ['http://localhost:3000', 'https://pos-pluto.vercel.app'],
 };
 
 app.use(cors(corsOptions));
