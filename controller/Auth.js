@@ -7,15 +7,25 @@ const { sendEmail } = require('../utils/sendEmail');
 const { default: StatusCode } = require('status-code-enum');
 
 const signUpWithIdPassword = asyncHandler(async (req, res) => {
+  const { storeName, storeDescription, name, email, password } = req.body;
+  if (!storeName || !storeDescription || !name || !email || password) {
+    return next(
+      new ErrorHandler(
+        'incomplete fields provided, required: {storeName, storeDescription, name, email, password}',
+        StatusCode.ClientErrorBadRequest
+      )
+    );
+  }
+
   const newUser = await store.create({
     data: {
-      name: req.body.storeName,
-      description: req.body.storeDescription,
+      name: storeName,
+      description: storeDescription,
       user: {
         create: {
-          name: req.body.name,
-          email: req.body.email,
-          password: bcrypt.hashSync(req.body.password, 10),
+          name: name,
+          email: email,
+          password: bcrypt.hashSync(password, 10),
           provider: req.provider || 'EMAIL',
           resetPasswordExpire: new Date().toISOString(),
         },
