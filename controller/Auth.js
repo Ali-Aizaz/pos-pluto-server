@@ -6,7 +6,7 @@ const ErrorHandler = require('../middleware/ErrorHandler');
 const { sendEmail } = require('../utils/sendEmail');
 const { default: StatusCode } = require('status-code-enum');
 
-const signUpWithIdPassword = asyncHandler(async (req, res) => {
+const signUpWithIdPassword = asyncHandler(async (req, res, next) => {
   const { storeName, storeDescription, name, email, password } = req.body;
   if (!storeName || !storeDescription || !name || !email || password) {
     return next(
