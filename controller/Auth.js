@@ -8,7 +8,8 @@ const { default: StatusCode } = require('status-code-enum');
 
 const signUpWithIdPassword = asyncHandler(async (req, res, next) => {
   const { storeName, storeDescription, name, email, password } = req.body;
-  if (!storeName || !storeDescription || !name || !email || password) {
+
+  if (!storeName || !storeDescription || !name || !email || !password) {
     return next(
       new ErrorHandler(
         'incomplete fields provided, required: {storeName, storeDescription, name, email, password}',
