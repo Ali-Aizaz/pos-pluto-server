@@ -5,18 +5,22 @@ const { user, store } = require('../config');
 const ErrorHandler = require('../middleware/ErrorHandler');
 const { sendEmail } = require('../utils/sendEmail');
 const { default: StatusCode } = require('status-code-enum');
+const { z } = require('zod');
 
-const signUpWithIdPassword = asyncHandler(async (req, res, next) => {
-  const { storeName, storeDescription, name, email, password } = req.body;
-
-  if (!storeName || !storeDescription || !name || !email || !password) {
-    return next(
-      new ErrorHandler(
-        'incomplete fields provided, required: {storeName, storeDescription, name, email, password}',
-        StatusCode.ClientErrorBadRequest
-      )
-    );
-  }
+const signUpWithIdPassword = asyncHandler(async (req, res) => {
+  const { storeName, storeDescription, name, email, password } = z
+    .object({
+      storeName: z.string().min(3).max(32),
+      storeDescription: z.string().min(3).max(150),
+      name: z.string().min(3).max(32),
+      email: z.string().email().min(3).max(50),
+      password: z
+        .string()
+        .regex(
+          /^(?=[^a-z]*[a-z])(?=[^A-Z]*[A-Z])(?=D*d)(?=[^!#%]*[!#%])[A-Za-z0-9!#%]{8,32}$/
+        ),
+    })
+    .parse(req.body);
 
   const newUser = await store.create({
     data: {
@@ -41,16 +45,12 @@ const signUpWithIdPassword = asyncHandler(async (req, res, next) => {
 });
 
 const logInWithIdPassword = asyncHandler(async (req, res, next) => {
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    return next(
-      new ErrorHandler(
-        'Email and Password must be provided',
-        StatusCode.ClientErrorBadRequest
-      )
-    );
-  }
+  const { email, password } = z
+    .object({
+      email: z.string().email().min(3).max(50),
+      password: z.string().min(8).max(50),
+    })
+    .parse(req.body);
 
   const result = await user.findUnique({
     where: { email },
@@ -72,10 +72,7 @@ const logInWithIdPassword = asyncHandler(async (req, res, next) => {
     );
   }
 
-  const isValid = bcrypt.compareSync(
-    req.body.password.toString(),
-    result.password
-  );
+  const isValid = bcrypt.compareSync(password, result.password);
 
   if (!isValid)
     return next(
@@ -96,8 +93,14 @@ const logInWithIdPassword = asyncHandler(async (req, res, next) => {
 });
 
 const getEmailProvider = asyncHandler(async (req, res) => {
+  const { email } = z
+    .object({
+      email: z.string().email().min(3).max(50),
+    })
+    .parse(req.body);
+
   const selectedUser = await user.findUnique({
-    where: { email: req.body.email },
+    where: { email },
   });
   return res.json(selectedUser ? selectedUser.provider : null);
 });
@@ -171,8 +174,14 @@ const getResetPasswordToken = () => {
 };
 
 const sendPasswordResetEmail = asyncHandler(async (req, res, next) => {
+  const { email } = z
+    .object({
+      email: z.string().email().min(3).max(50),
+    })
+    .parse(req.body);
+
   const selectedUser = await user.findUnique({
-    where: { email: req.body.email },
+    where: { email },
   });
 
   if (!selectedUser) {
@@ -201,7 +210,7 @@ const sendPasswordResetEmail = asyncHandler(async (req, res, next) => {
       resetPasswordExpire: resetToken.resetPasswordExpire,
       resetPasswordToken: resetToken.resetPasswordToken,
     },
-    { where: { email: req.body.email } }
+    { where: { email } }
   );
   const message = `Hi ${selectedUser.name},
   You've requested to reset the password linked with your POS Pluto account.
@@ -230,7 +239,7 @@ const sendPasswordResetEmail = asyncHandler(async (req, res, next) => {
         resetPasswordToken: null,
         resetPasswordExpire: null,
       },
-      { where: { email: req.body.email } }
+      { where: { email } }
     );
 
     return next(
@@ -243,7 +252,18 @@ const sendPasswordResetEmail = asyncHandler(async (req, res, next) => {
 });
 
 const resetPassword = asyncHandler(async (req, res, next) => {
-  const hash = await bcrypt.hash(req.body.newPassword, 10);
+  const { newPassword, resetPasswordToken } = z
+    .object({
+      newPassword: z
+        .string()
+        .regex(
+          /^(?=[^a-z]*[a-z])(?=[^A-Z]*[A-Z])(?=D*d)(?=[^!#%]*[!#%])[A-Za-z0-9!#%]{8,32}$/
+        ),
+      resetPasswordToken: z.string(),
+    })
+    .parse(req.body);
+
+  const hash = await bcrypt.hash(newPassword, 10);
   const updatedUser = await user.update(
     {
       password: hash,
@@ -254,7 +274,7 @@ const resetPassword = asyncHandler(async (req, res, next) => {
     {
       where: {
         AND: [
-          { resetPasswordToken: req.body.resetPasswordToken },
+          { resetPasswordToken },
           { resetPasswordExpire: { gt: Date.now() } },
         ],
       },

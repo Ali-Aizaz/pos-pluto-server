@@ -1,3 +1,6 @@
+const { fromZodError } = require('zod-validation-error');
+
+const { default: StatusCode } = require('status-code-enum');
 const errorHandler = (err, req, res, next) => {
   const error = { ...err };
   const response = {
@@ -9,6 +12,12 @@ const errorHandler = (err, req, res, next) => {
   // Log to console for dev
 
   console.log(error);
+
+  if (error.name === 'ZodError')
+    return res
+      .status(StatusCode.ClientErrorBadRequest)
+      .json(fromZodError(err).message);
+
   if (error.code === 'P2002') {
     response.error = `There is a unique constraint violation, ${error.meta.target}`;
   } else if (error.meta) {
@@ -16,11 +25,10 @@ const errorHandler = (err, req, res, next) => {
     else if (error.meta.cause) response.error = error.meta.cause;
   } else if (error.message) {
     response.error = error.message;
-  } else if (error.code) {
-    errorCode = error.code;
-  } else {
-    errorCode = 500;
   }
+
+  if (error.code) errorCode = error.code;
+  else errorCode = StatusCode.ServerErrorInternal;
 
   return res.status(errorCode).json(response);
 };
