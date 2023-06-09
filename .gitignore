@@ -116,6 +116,7 @@ config/config.json
 /.pnp.*                 binary linguist-generated
 
 # Hide .yarn from GitHub's language detection
+.yarn
 .yarn/**               linguist-vendored
 
 ./yarn/cache
