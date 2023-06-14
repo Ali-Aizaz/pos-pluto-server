@@ -29,21 +29,21 @@ model User {
 }
 
 model Product {
-  id         String      @id @unique @default(uuid()) @db.Uuid
-  name       String      @db.VarChar(255)
-  price      Int         @db.Integer
-  imageUrl   String?     @db.VarChar(255)
-  createdAt  DateTime    @default(now()) @db.Timestamp(6)
-  updatedAt  DateTime    @updatedAt @db.Timestamp(6)
-  categoryId String      @db.Uuid
-  category   Category    @relation(fields: [categoryId], references: [id])
-  details    Json
-  inventory  Inventory[]
-  sold       Sold[]
-  returned   Returned[]
-  warranty   Warranty[]
+  id           String      @id @unique @default(uuid()) @db.Uuid
+  name         String      @db.VarChar(255)
+  price        Int         @db.Integer
+  imageUrl     String?     @db.VarChar(255)
+  createdAt    DateTime    @default(now()) @db.Timestamp(6)
+  updatedAt    DateTime    @updatedAt @db.Timestamp(6)
+  categoryName String      @db.VarChar(255)
+  category     Category    @relation(fields: [categoryName], references: [name])
+  details      Json
+  inventory    Inventory[]
+  sold         Sold[]
+  returned     Returned[]
+  warranty     Warranty[]
 
-  @@index([categoryId])
+  @@index([categoryName])
 }
 
 model Category {
