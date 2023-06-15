@@ -6,7 +6,7 @@ const { category } = require('../config');
 const getCategories = asyncHandler(async (req, res, next) => {
   const { search, include } = z
     .object({
-      name: z
+      search: z
         .string()
         .min(3, 'minimum 3 characters required')
         .max(32, 'maximum 32 characters are acceptable')
