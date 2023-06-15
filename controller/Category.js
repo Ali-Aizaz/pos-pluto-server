@@ -4,7 +4,7 @@ const advancedResults = require('../middleware/AdvancedResults');
 const { category } = require('../config');
 
 const getCategories = asyncHandler(async (req, res, next) => {
-  const { name, include } = z
+  const { search, include } = z
     .object({
       name: z
         .string()
@@ -17,7 +17,7 @@ const getCategories = asyncHandler(async (req, res, next) => {
 
   const query = name && {
     name: {
-      search: name,
+      search,
     },
   };
 
