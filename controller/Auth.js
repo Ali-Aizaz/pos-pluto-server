@@ -10,15 +10,20 @@ const { z } = require('zod');
 const signUpWithIdPassword = asyncHandler(async (req, res) => {
   const { storeName, storeDescription, name, email, password } = z
     .object({
-      storeName: z.string().min(3).max(32),
+      storeName: z.string('').min(3).max(32),
       storeDescription: z.string().min(3).max(150),
       name: z.string().min(3).max(32),
       email: z.string().email().min(3).max(50),
       password: z
         .string()
+        .regex(new RegExp('.*[A-Z].*'), 'One uppercase character')
+        .regex(new RegExp('.*[a-z].*'), 'One lowercase character')
+        .regex(new RegExp('.*\\d.*'), 'One number')
         .regex(
-          /^(?=[^a-z]*[a-z])(?=[^A-Z]*[A-Z])(?=D*d)(?=[^!#%]*[!#%])[A-Za-z0-9!#%]{8,32}$/
-        ),
+          new RegExp('.*[`~<>?,./!@#$%^&*()\\-_+="\'|{}\\[\\];:\\\\].*'),
+          'One special character'
+        )
+        .min(8, 'Must be at least 8 characters in length'),
     })
     .parse(req.body);
 
