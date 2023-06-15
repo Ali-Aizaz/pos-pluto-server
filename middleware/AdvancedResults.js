@@ -4,9 +4,7 @@ const advancedResults = async (model, request, populate) => {
   const reqQuery = { ...request };
 
   if (reqQuery.select) {
-    query.select = reqQuery.select.split(',').map((v) => {
-      return { [v]: true };
-    });
+    query.select = reqQuery.select;
     delete reqQuery['select'];
   }
   // Sort
