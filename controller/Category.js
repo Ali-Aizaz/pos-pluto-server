@@ -15,7 +15,7 @@ const getCategories = asyncHandler(async (req, res, next) => {
     })
     .parse(req.query);
 
-  const query = name && {
+  const query = search && {
     name: {
       search,
     },
