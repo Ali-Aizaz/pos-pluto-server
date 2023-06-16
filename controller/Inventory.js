@@ -4,6 +4,7 @@ const asyncHandler = require('../middleware/AsyncHandler');
 const ErrorHandler = require('../middleware/ErrorHandler');
 const advancedResult = require('../middleware/AdvancedResults');
 const prisma = require('../config');
+const { z } = require('zod');
 
 const sellProduct = asyncHandler(async (req, res, next) => {
   const { productId, count } = req.query;
@@ -59,9 +60,23 @@ const getInventory = asyncHandler(async (req, res) => {
     product: true,
   };
 
-  req.query.storeId = req.user.storeId;
+  const { categoryName } = z
+    .object({
+      categoryName: z
+        .string()
+        .min(3, 'category name must be at least 3 characters long')
+        .max(50, 'category name must be at most 50 characters long')
+        .optional(),
+    })
+    .parse(req.query);
 
-  const result = await advancedResult(inventory, req.query, populate);
+  const query = {
+    storeId: req.user.storeId,
+  };
+
+  query.product = categoryName && { categoryName };
+
+  const result = await advancedResult(inventory, query, populate);
 
   res.json(result);
 });

@@ -6,26 +6,11 @@ const ErrorHandler = require('../middleware/ErrorHandler');
 const { sendEmail } = require('../utils/sendEmail');
 const { default: StatusCode } = require('status-code-enum');
 const { z } = require('zod');
+const { signUpSchema } = require('../utils/zodConfig');
 
 const signUpWithIdPassword = asyncHandler(async (req, res) => {
-  const { storeName, storeDescription, name, email, password } = z
-    .object({
-      storeName: z.string('').min(3).max(32),
-      storeDescription: z.string().min(3).max(150),
-      name: z.string().min(3).max(32),
-      email: z.string().email().min(3).max(50),
-      password: z
-        .string()
-        .regex(new RegExp('.*[A-Z].*'), 'One uppercase character')
-        .regex(new RegExp('.*[a-z].*'), 'One lowercase character')
-        .regex(new RegExp('.*\\d.*'), 'One number')
-        .regex(
-          new RegExp('.*[`~<>?,./!@#$%^&*()\\-_+="\'|{}\\[\\];:\\\\].*'),
-          'One special character'
-        )
-        .min(8, 'Must be at least 8 characters in length'),
-    })
-    .parse(req.body);
+  const { storeName, storeDescription, name, email, password } =
+    signUpSchema.parse(req.body);
 
   const newUser = await store.create({
     data: {
