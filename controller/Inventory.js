@@ -74,7 +74,11 @@ const getInventory = asyncHandler(async (req, res) => {
     storeId: req.user.storeId,
   };
 
-  query.product = categoryName && { categoryName };
+  query.product = categoryName && {
+    categoryName: {
+      search: categoryName,
+    },
+  };
 
   const result = await advancedResult(inventory, query, populate);
 
