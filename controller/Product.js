@@ -6,12 +6,17 @@ const ErrorHandler = require('../middleware/ErrorHandler');
 const { z } = require('zod');
 
 const getProducts = asyncHandler(async (req, res) => {
-  const { categoryName, include } = z
+  const { categoryName, include, search } = z
     .object({
       categoryName: z
         .string()
         .min(3, 'category name must be at least 3 characters long')
         .max(50, 'category name must be at most 50 characters long')
+        .optional(),
+      search: z
+        .string()
+        .min(3, 'product name must be at least 3 characters long')
+        .max(50, 'product name must be at most 50 characters long')
         .optional(),
       include: z.enum(['category']).optional(),
     })
@@ -23,6 +28,9 @@ const getProducts = asyncHandler(async (req, res) => {
 
   req.query.categoryName = categoryName && {
     search: categoryName,
+  };
+  req.query.name = {
+    search,
   };
 
   const result = await advancedResults(product, req.query, populate);
