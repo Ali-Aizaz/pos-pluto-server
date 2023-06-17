@@ -33,6 +33,8 @@ const getProducts = asyncHandler(async (req, res) => {
     search,
   };
 
+  delete req.query.search;
+
   const result = await advancedResults(product, req.query, populate);
   return res.json(result);
 });
