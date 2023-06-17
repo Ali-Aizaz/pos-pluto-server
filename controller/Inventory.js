@@ -85,6 +85,27 @@ const getInventory = asyncHandler(async (req, res) => {
   res.json(result);
 });
 
+const createStoreListing = asyncHandler(async (req, res, next) => {
+  const { productId, count, price } = req.body;
+  const { modal } = req;
+
+  if (!productId || !count || !price)
+    return next(
+      new ErrorHandler('Incomplete Fields', StatusCode.ClientErrorBadRequest)
+    );
+
+  const newInventory = await modal.create({
+    data: {
+      count,
+      price,
+      productId,
+      storeId: req.user.storeId,
+    },
+  });
+
+  return res.json(newInventory);
+});
+
 const manageInventory = asyncHandler(async (req, res, next) => {
   const { productId, count } = req.body;
   const { modal } = req;
@@ -124,8 +145,9 @@ const manageInventory = asyncHandler(async (req, res, next) => {
       },
     },
     create: {
-      count: count,
-      productId: productId,
+      count,
+      price: selectSold.price,
+      productId,
       storeId: req.user.storeId,
     },
   });
@@ -141,6 +163,21 @@ const returnProduct = asyncHandler(async (req, res, next) => {
 const claimWarrenty = asyncHandler(async (req, res, next) => {
   req.modal = warranty;
   manageInventory(req, res, next);
+});
+
+const createInventory = asyncHandler(async (req, res, next) => {
+  req.modal = inventory;
+  createStoreListing(req, res, next);
+});
+
+const createSold = asyncHandler(async (req, res, next) => {
+  req.modal = sold;
+  createStoreListing(req, res, next);
+});
+
+const createWarrent = asyncHandler(async (req, res, next) => {
+  req.modal = warranty;
+  createStoreListing(req, res, next);
 });
 
 module.exports = {

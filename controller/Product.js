@@ -57,12 +57,22 @@ const getProductById = asyncHandler(async (req, res, next) => {
 });
 
 const createProduct = asyncHandler(async (req, res, next) => {
-  const { name, content, count, category: providedCategory, price } = req.query;
+  const { name, content, category: providedCategory } = req.query;
+
+  const contentKeys = Object.keys(content);
 
   if (!name || !content)
     return next(
       new ErrorHandler(
         'product name and content required',
+        StatusCode.ClientErrorBadRequest
+      )
+    );
+
+  if (contentKeys.length > 10)
+    return next(
+      new ErrorHandler(
+        'too many product fields only 10 fields are required',
         StatusCode.ClientErrorBadRequest
       )
     );
@@ -87,14 +97,12 @@ const createProduct = asyncHandler(async (req, res, next) => {
     const newProduct = await category.create({
       data: {
         name: providedCategory,
-        categoryData: Object.keys(content),
+        categoryData: contentKeys,
         product: {
           create: {
             name,
             details: content,
-            count,
             categoryId: categoryId.id,
-            price,
           },
         },
       },
@@ -103,7 +111,7 @@ const createProduct = asyncHandler(async (req, res, next) => {
 
     return res.json(newProduct.product);
   } else {
-    if (selectedCategory.categoryData !== Object.keys(content))
+    if (selectedCategory.categoryData !== contentKeys)
       return next(
         new ErrorHandler(
           'invalid product fields',

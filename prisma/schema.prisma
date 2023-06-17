@@ -32,7 +32,6 @@ model User {
 model Product {
   id           String      @id @unique @default(uuid()) @db.Uuid
   name         String      @db.VarChar(255)
-  price        Int         @db.Integer
   imageUrl     String?     @db.VarChar(255)
   createdAt    DateTime    @default(now()) @db.Timestamp(6)
   updatedAt    DateTime    @updatedAt @db.Timestamp(6)
@@ -59,6 +58,7 @@ model Category {
 model Inventory {
   id        String   @id @unique @default(uuid()) @db.Uuid
   count     Int      @default(1) @db.Integer
+  price     Int      @db.Integer
   createdAt DateTime @default(now()) @db.Timestamp(6)
   updatedAt DateTime @updatedAt @db.Timestamp(6)
   storeId   String   @db.Uuid
@@ -75,6 +75,7 @@ model Inventory {
 model Sold {
   id        String   @id @unique @default(uuid()) @db.Uuid
   count     Int      @default(1) @db.Integer
+  price     Int      @db.Integer
   createdAt DateTime @default(now()) @db.Timestamp(6)
   updatedAt DateTime @updatedAt @db.Timestamp(6)
   storeId   String   @db.Uuid
@@ -91,6 +92,7 @@ model Sold {
 model Returned {
   id        String   @id @unique @default(uuid()) @db.Uuid
   count     Int      @default(1) @db.Integer
+  price     Int      @db.Integer
   createdAt DateTime @default(now()) @db.Timestamp(6)
   updatedAt DateTime @updatedAt @db.Timestamp(6)
   storeId   String   @db.Uuid
@@ -107,6 +109,7 @@ model Returned {
 model Warranty {
   id        String   @id @unique @default(uuid()) @db.Uuid
   count     Int      @default(1) @db.Integer
+  price     Int      @db.Integer
   createdAt DateTime @default(now()) @db.Timestamp(6)
   updatedAt DateTime @updatedAt @db.Timestamp(6)
   storeId   String   @db.Uuid

@@ -14,7 +14,6 @@ module.exports = async function ({ category }) {
         create: [
           {
             name: 'Gree 1.5 ton Invertor',
-            price: 150000,
             details: {
               type: 'Air Conditioner',
               brand: 'Gree',
@@ -24,7 +23,6 @@ module.exports = async function ({ category }) {
           },
           {
             name: 'Gree 1.0 ton Invertor',
-            price: 150000,
             details: {
               type: 'Air Conditioner',
               brand: 'Gree',
@@ -34,7 +32,6 @@ module.exports = async function ({ category }) {
           },
           {
             name: 'Dawlance 15 liter',
-            price: 14000,
             details: {
               type: 'Microwave',
               brand: 'Dawlance',
@@ -44,7 +41,6 @@ module.exports = async function ({ category }) {
           },
           {
             name: 'Homage 15 liter',
-            price: 13000,
             details: {
               type: 'Microwave',
               brand: 'Homage',
@@ -54,7 +50,6 @@ module.exports = async function ({ category }) {
           },
           {
             name: 'Homage 19 liter',
-            price: 17000,
             details: {
               type: 'Microwave',
               brand: 'Homage',
@@ -64,7 +59,6 @@ module.exports = async function ({ category }) {
           },
           {
             name: 'Homage 23 liter',
-            price: 20000,
             details: {
               type: 'Microwave',
               brand: 'Homage',
@@ -85,7 +79,6 @@ module.exports = async function ({ category }) {
         create: [
           {
             name: 'Beats A400 headphones',
-            price: 20000,
             details: {
               type: 'Headphones',
               brand: 'Beats',
@@ -95,7 +88,6 @@ module.exports = async function ({ category }) {
           },
           {
             name: 'Beats A400 headphones',
-            price: 19000,
             details: {
               type: 'Headphones',
               brand: 'Beats',
@@ -105,7 +97,6 @@ module.exports = async function ({ category }) {
           },
           {
             name: 'Beats A500 headphones',
-            price: 22000,
             details: {
               type: 'Headphones',
               brand: 'Beats',
@@ -115,7 +106,6 @@ module.exports = async function ({ category }) {
           },
           {
             name: 'Razor G660 Gaming X',
-            price: 23000,
             details: {
               type: 'Keyboard',
               brand: 'Razor',

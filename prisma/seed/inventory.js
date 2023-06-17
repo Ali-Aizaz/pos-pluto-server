@@ -17,29 +17,39 @@ module.exports = async function ({ inventory, product, store }) {
       {
         storeId: stores[0].id,
         productId: products[0].id,
+        price: 150000,
         count: 7,
       },
       {
         storeId: stores[1].id,
         productId: products[0].id,
+        price: 150000,
         count: 15,
       },
       {
         storeId: stores[0].id,
         productId: products[1].id,
+        price: 15000,
         count: 71,
       },
       {
         storeId: stores[0].id,
         productId: products[7].id,
+        price: 17000,
         count: 7,
       },
       {
         storeId: stores[0].id,
         productId: products[5].id,
+        price: 23000,
         count: 20,
       },
-      { storeId: stores[1].id, productId: products[3].id, count: 18 },
+      {
+        storeId: stores[1].id,
+        productId: products[3].id,
+        price: 42000,
+        count: 18,
+      },
     ],
   });
 };
