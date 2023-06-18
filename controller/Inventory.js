@@ -1,5 +1,12 @@
 const { default: StatusCode } = require('status-code-enum');
-const { inventory, product, returned, warranty, sold } = require('../config');
+const {
+  inventory,
+  product,
+  returned,
+  warranty,
+  sold,
+  customer,
+} = require('../config');
 const asyncHandler = require('../middleware/AsyncHandler');
 const ErrorHandler = require('../middleware/ErrorHandler');
 const advancedResult = require('../middleware/AdvancedResults');
@@ -7,52 +14,84 @@ const prisma = require('../config');
 const { z } = require('zod');
 
 const sellProduct = asyncHandler(async (req, res, next) => {
-  const { productId, count } = req.query;
+  const { inventoryData, customerName: name, phone } = req.body;
 
-  if (!productId)
-    return next(
-      new ErrorHandler('productId required', StatusCode.ClientErrorBadRequest)
-    );
-
-  const selectedProduct = await inventory.findUnique({
-    where: { productId_storeId: { productId, storeId: req.user.storeId } },
-  });
-
-  if (!selectedProduct)
-    return next(
-      new ErrorHandler('invalid productId', StatusCode.ClientErrorNotFound)
-    );
-
-  if (selectedProduct.count < count)
+  if (!inventoryData)
     return next(
       new ErrorHandler(
-        'Insufficient Stock',
-        StatusCode.ClientErrorPreconditionFailed
+        'inventory data is required',
+        StatusCode.ClientErrorBadRequest
       )
     );
 
-  const [result] = await prisma.$transaction([
-    sold.create({
-      data: {
-        count,
-        productId,
-        storeId: req.user.storeId,
+  const selectedProduct = await inventory.findMany({
+    where: {
+      id: {
+        in: inventoryData.map((i) => i.id),
       },
-      include: {
-        product,
-      },
-    }),
-    inventory.update({
-      where: { productId_storeId: { productId, storeId: req.user.storeId } },
-      data: {
-        count: {
-          decrement: count,
-        },
-      },
-    }),
-  ]);
+    },
+  });
 
-  return res.json(result);
+  if (
+    selectedProduct.length !== inventoryData.length ||
+    selectedProduct.every((o1) => {
+      const o2 = inventoryData.find((o2) => o2.id === o1.id);
+      return o2.price !== o1.price || o1.count < o2.count;
+    })
+  )
+    return next(
+      new ErrorHandler(
+        'invalid productId or insuffiecent product count',
+        StatusCode.ClientErrorNotFound
+      )
+    );
+
+  console.log(selectedProduct);
+
+  return prisma.$transaction(async (tx) => {
+    const newCustomer = name
+      ? await tx.customer.create({
+          data: {
+            name,
+            phone,
+          },
+        })
+      : {
+          id: null,
+        };
+
+    const transactionArray = inventoryData.map((x) =>
+      tx.inventory.update({
+        where: {
+          id: x.id,
+        },
+        data: {
+          count: {
+            decrement: x.count,
+          },
+        },
+      })
+    );
+
+    transactionArray.unshift(
+      tx.sold.createMany({
+        data: inventoryData.map((x) => {
+          return {
+            count: x.count,
+            productId: x.productId,
+            customerId: newCustomer.id,
+            price: x.price,
+            warranty: x.warranty,
+            storeId: req.user.storeId,
+          };
+        }),
+      })
+    );
+
+    const [result] = await Promise.all(transactionArray);
+
+    return res.json(result);
+  });
 });
 
 const getInventory = asyncHandler(async (req, res) => {
@@ -85,16 +124,15 @@ const getInventory = asyncHandler(async (req, res) => {
   res.json(result);
 });
 
-const createStoreListing = asyncHandler(async (req, res, next) => {
+const createInventory = asyncHandler(async (req, res, next) => {
   const { productId, count, price, warranty } = req.body;
-  const { modal } = req;
 
   if (!productId || !count || !price || !warranty)
     return next(
       new ErrorHandler('Incomplete Fields', StatusCode.ClientErrorBadRequest)
     );
 
-  const newInventory = await modal.create({
+  const newInventory = await inventory.create({
     data: {
       count,
       price,
@@ -108,7 +146,7 @@ const createStoreListing = asyncHandler(async (req, res, next) => {
 });
 
 const manageInventory = asyncHandler(async (req, res, next) => {
-  const { productId, count } = req.body;
+  const { productId, count, name, phone } = req.body;
   const { modal } = req;
 
   if (!productId || !count)
@@ -147,8 +185,9 @@ const manageInventory = asyncHandler(async (req, res, next) => {
     },
     create: {
       count,
-      price: selectSold.price,
       productId,
+      warranty: selectSold.warranty,
+      price: selectSold.price,
       storeId: req.user.storeId,
     },
   });
@@ -166,24 +205,10 @@ const claimWarrenty = asyncHandler(async (req, res, next) => {
   manageInventory(req, res, next);
 });
 
-const createInventory = asyncHandler(async (req, res, next) => {
-  req.modal = inventory;
-  createStoreListing(req, res, next);
-});
-
-const createSold = asyncHandler(async (req, res, next) => {
-  req.modal = sold;
-  createStoreListing(req, res, next);
-});
-
-const createWarrent = asyncHandler(async (req, res, next) => {
-  req.modal = warranty;
-  createStoreListing(req, res, next);
-});
-
 module.exports = {
   getInventory,
   sellProduct,
   returnProduct,
   claimWarrenty,
+  createInventory,
 };

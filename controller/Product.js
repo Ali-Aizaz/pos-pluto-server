@@ -3,7 +3,6 @@ const asyncHandler = require('../middleware/AsyncHandler');
 const { product, category } = require('../config');
 const advancedResults = require('../middleware/AdvancedResults');
 const ErrorHandler = require('../middleware/ErrorHandler');
-const { z } = require('zod');
 const { productGetSchema } = require('../utils/zodConfig');
 
 const getProducts = asyncHandler(async (req, res) => {

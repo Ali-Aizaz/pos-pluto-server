@@ -59,7 +59,7 @@ model Inventory {
   id        String   @id @unique @default(uuid()) @db.Uuid
   count     Int      @default(1) @db.Integer
   price     Int      @db.Integer
-  warranty  BigInt   @db.BigInt
+  warranty  Int      @db.Integer
   createdAt DateTime @default(now()) @db.Timestamp(6)
   updatedAt DateTime @updatedAt @db.Timestamp(6)
   storeId   String   @db.Uuid
@@ -71,60 +71,60 @@ model Inventory {
   @@index([productId, storeId])
   @@index([productId])
   @@index([storeId])
+}
+
+model Customer {
+  id       String     @id @unique @default(uuid()) @db.Uuid
+  name     String     @db.VarChar(255)
+  phone    String?    @unique @db.VarChar(255)
+  items    Sold[]
+  Returned Returned[]
+  Warranty Warranty[]
 }
 
 model Sold {
-  id        String   @id @unique @default(uuid()) @db.Uuid
-  count     Int      @default(1) @db.Integer
-  price     Int      @db.Integer
-  warranty  BigInt   @db.BigInt
-  createdAt DateTime @default(now()) @db.Timestamp(6)
-  updatedAt DateTime @updatedAt @db.Timestamp(6)
-  storeId   String   @db.Uuid
-  store     Store    @relation(fields: [storeId], references: [id])
-  productId String   @db.Uuid
-  product   Product  @relation(fields: [productId], references: [id])
-
-  @@unique([productId, storeId])
-  @@index([productId, storeId])
-  @@index([productId])
-  @@index([storeId])
+  id         String    @id @unique @default(uuid()) @db.Uuid
+  count      Int       @default(1) @db.Integer
+  price      Int       @db.Integer
+  warranty   Int       @db.Integer
+  createdAt  DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt  DateTime  @updatedAt @db.Timestamp(6)
+  storeId    String    @db.Uuid
+  store      Store     @relation(fields: [storeId], references: [id])
+  productId  String    @db.Uuid
+  product    Product   @relation(fields: [productId], references: [id])
+  customerId String?   @db.Uuid
+  customer   Customer? @relation(fields: [customerId], references: [id])
 }
 
 model Returned {
-  id        String   @id @unique @default(uuid()) @db.Uuid
-  count     Int      @default(1) @db.Integer
-  price     Int      @db.Integer
-  warranty  BigInt   @db.BigInt
-  createdAt DateTime @default(now()) @db.Timestamp(6)
-  updatedAt DateTime @updatedAt @db.Timestamp(6)
-  storeId   String   @db.Uuid
-  store     Store    @relation(fields: [storeId], references: [id])
-  productId String   @db.Uuid
-  product   Product  @relation(fields: [productId], references: [id])
-
-  @@unique([productId, storeId])
-  @@index([productId, storeId])
-  @@index([productId])
-  @@index([storeId])
+  id         String    @id @unique @default(uuid()) @db.Uuid
+  count      Int       @default(1) @db.Integer
+  price      Int       @db.Integer
+  warranty   Int       @db.Integer
+  createdAt  DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt  DateTime  @updatedAt @db.Timestamp(6)
+  storeId    String    @db.Uuid
+  store      Store     @relation(fields: [storeId], references: [id])
+  productId  String    @db.Uuid
+  product    Product   @relation(fields: [productId], references: [id])
+  customerId String?   @db.Uuid
+  customer   Customer? @relation(fields: [customerId], references: [id])
 }
 
 model Warranty {
-  id        String   @id @unique @default(uuid()) @db.Uuid
-  count     Int      @default(1) @db.Integer
-  price     Int      @db.Integer
-  warranty  BigInt   @db.BigInt
-  createdAt DateTime @default(now()) @db.Timestamp(6)
-  updatedAt DateTime @updatedAt @db.Timestamp(6)
-  storeId   String   @db.Uuid
-  store     Store    @relation(fields: [storeId], references: [id])
-  productId String   @db.Uuid
-  product   Product  @relation(fields: [productId], references: [id])
-
-  @@unique([productId, storeId])
-  @@index([productId, storeId])
-  @@index([productId])
-  @@index([storeId])
+  id         String    @id @unique @default(uuid()) @db.Uuid
+  count      Int       @default(1) @db.Integer
+  price      Int       @db.Integer
+  warranty   Int       @db.Integer
+  createdAt  DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt  DateTime  @updatedAt @db.Timestamp(6)
+  storeId    String    @db.Uuid
+  store      Store     @relation(fields: [storeId], references: [id])
+  productId  String    @db.Uuid
+  product    Product   @relation(fields: [productId], references: [id])
+  customerId String?   @db.Uuid
+  customer   Customer? @relation(fields: [customerId], references: [id])
 }
 
 model Store {

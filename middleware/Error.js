@@ -11,7 +11,7 @@ const errorHandler = (err, req, res, next) => {
   error.message = err.message;
   // Log to console for dev
 
-  console.log(error);
+  console.log(err);
 
   if (error.name === 'ZodError')
     return res
