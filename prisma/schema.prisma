@@ -59,6 +59,7 @@ model Inventory {
   id        String   @id @unique @default(uuid()) @db.Uuid
   count     Int      @default(1) @db.Integer
   price     Int      @db.Integer
+  warranty  BigInt   @db.BigInt
   createdAt DateTime @default(now()) @db.Timestamp(6)
   updatedAt DateTime @updatedAt @db.Timestamp(6)
   storeId   String   @db.Uuid
@@ -76,6 +77,7 @@ model Sold {
   id        String   @id @unique @default(uuid()) @db.Uuid
   count     Int      @default(1) @db.Integer
   price     Int      @db.Integer
+  warranty  BigInt   @db.BigInt
   createdAt DateTime @default(now()) @db.Timestamp(6)
   updatedAt DateTime @updatedAt @db.Timestamp(6)
   storeId   String   @db.Uuid
@@ -93,6 +95,7 @@ model Returned {
   id        String   @id @unique @default(uuid()) @db.Uuid
   count     Int      @default(1) @db.Integer
   price     Int      @db.Integer
+  warranty  BigInt   @db.BigInt
   createdAt DateTime @default(now()) @db.Timestamp(6)
   updatedAt DateTime @updatedAt @db.Timestamp(6)
   storeId   String   @db.Uuid
@@ -110,6 +113,7 @@ model Warranty {
   id        String   @id @unique @default(uuid()) @db.Uuid
   count     Int      @default(1) @db.Integer
   price     Int      @db.Integer
+  warranty  BigInt   @db.BigInt
   createdAt DateTime @default(now()) @db.Timestamp(6)
   updatedAt DateTime @updatedAt @db.Timestamp(6)
   storeId   String   @db.Uuid

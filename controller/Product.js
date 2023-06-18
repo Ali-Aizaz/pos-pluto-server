@@ -4,23 +4,12 @@ const { product, category } = require('../config');
 const advancedResults = require('../middleware/AdvancedResults');
 const ErrorHandler = require('../middleware/ErrorHandler');
 const { z } = require('zod');
+const { productGetSchema } = require('../utils/zodConfig');
 
 const getProducts = asyncHandler(async (req, res) => {
-  const { categoryName, include, search } = z
-    .object({
-      categoryName: z
-        .string()
-        .min(3, 'category name must be at least 3 characters long')
-        .max(50, 'category name must be at most 50 characters long')
-        .optional(),
-      search: z
-        .string()
-        .min(3, 'product name must be at least 3 characters long')
-        .max(50, 'product name must be at most 50 characters long')
-        .optional(),
-      include: z.enum(['category']).optional(),
-    })
-    .parse(req.query);
+  const { categoryName, include, search, all } = productGetSchema.parse(
+    req.query
+  );
 
   const populate = include && {
     category: true,
@@ -33,6 +22,13 @@ const getProducts = asyncHandler(async (req, res) => {
     search,
   };
 
+  req.query.inventory = !all && {
+    none: {
+      storeId: req.user.storeId,
+    },
+  };
+
+  delete req.query.all;
   delete req.query.search;
 
   const result = await advancedResults(product, req.query, populate);

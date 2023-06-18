@@ -86,10 +86,10 @@ const getInventory = asyncHandler(async (req, res) => {
 });
 
 const createStoreListing = asyncHandler(async (req, res, next) => {
-  const { productId, count, price } = req.body;
+  const { productId, count, price, warranty } = req.body;
   const { modal } = req;
 
-  if (!productId || !count || !price)
+  if (!productId || !count || !price || !warranty)
     return next(
       new ErrorHandler('Incomplete Fields', StatusCode.ClientErrorBadRequest)
     );
@@ -99,6 +99,7 @@ const createStoreListing = asyncHandler(async (req, res, next) => {
       count,
       price,
       productId,
+      warranty,
       storeId: req.user.storeId,
     },
   });

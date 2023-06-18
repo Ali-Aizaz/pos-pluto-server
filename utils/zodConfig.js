@@ -31,6 +31,22 @@ const signUpSchema = z.object({
     .max(50, 'maximum 32 characters accepted for password'),
 });
 
+const productGetSchema = z.object({
+  categoryName: z
+    .string()
+    .min(3, 'category name must be at least 3 characters long')
+    .max(50, 'category name must be at most 50 characters long')
+    .optional(),
+  search: z
+    .string()
+    .min(3, 'product name must be at least 3 characters long')
+    .max(50, 'product name must be at most 50 characters long')
+    .optional(),
+  include: z.enum(['category']).optional(),
+  all: z.enum(['true']).optional(),
+});
+
 module.exports = {
   signUpSchema,
+  productGetSchema,
 };
