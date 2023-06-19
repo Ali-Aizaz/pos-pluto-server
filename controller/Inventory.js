@@ -46,8 +46,6 @@ const sellProduct = asyncHandler(async (req, res, next) => {
       )
     );
 
-  console.log(selectedProduct);
-
   return prisma.$transaction(async (tx) => {
     const newCustomer = name
       ? await tx.customer.create({
@@ -99,12 +97,17 @@ const getInventory = asyncHandler(async (req, res) => {
     product: true,
   };
 
-  const { categoryName } = z
+  const { categoryName, search } = z
     .object({
       categoryName: z
         .string()
         .min(3, 'category name must be at least 3 characters long')
         .max(50, 'category name must be at most 50 characters long')
+        .optional(),
+      search: z
+        .string()
+        .min(3, 'product name must be at least 3 characters long')
+        .max(50, 'product name must be at most 50 characters long')
         .optional(),
     })
     .parse(req.query);
@@ -116,6 +119,12 @@ const getInventory = asyncHandler(async (req, res) => {
   query.product = categoryName && {
     categoryName: {
       search: categoryName,
+    },
+  };
+
+  query.product = search && {
+    name: {
+      search,
     },
   };
 
