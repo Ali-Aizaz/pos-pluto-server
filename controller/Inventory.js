@@ -1,12 +1,5 @@
 const { default: StatusCode } = require('status-code-enum');
-const {
-  inventory,
-  product,
-  returned,
-  warranty,
-  sold,
-  customer,
-} = require('../config');
+const { inventory, returned, warranty, sold } = require('../config');
 const asyncHandler = require('../middleware/AsyncHandler');
 const ErrorHandler = require('../middleware/ErrorHandler');
 const advancedResult = require('../middleware/AdvancedResults');
@@ -14,7 +7,7 @@ const prisma = require('../config');
 const { z } = require('zod');
 
 const sellProduct = asyncHandler(async (req, res, next) => {
-  const { inventoryData, customerName: name, phone } = req.body;
+  const { inventoryData, name, phone } = req.body;
 
   if (!inventoryData)
     return next(
@@ -36,7 +29,11 @@ const sellProduct = asyncHandler(async (req, res, next) => {
     selectedProduct.length !== inventoryData.length ||
     selectedProduct.every((o1) => {
       const o2 = inventoryData.find((o2) => o2.id === o1.id);
-      return o2.price !== o1.price || o1.count < o2.count;
+      return (
+        o2.price !== o1.price ||
+        o1.count < o2.count ||
+        o2.warranty !== o1.warranty
+      );
     })
   )
     return next(
@@ -155,7 +152,7 @@ const createInventory = asyncHandler(async (req, res, next) => {
 });
 
 const manageInventory = asyncHandler(async (req, res, next) => {
-  const { productId, count, name, phone } = req.body;
+  const { productId, count } = req.body;
   const { modal } = req;
 
   if (!productId || !count)
