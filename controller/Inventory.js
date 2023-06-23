@@ -17,25 +17,29 @@ const sellProduct = asyncHandler(async (req, res, next) => {
       )
     );
 
-  const selectedProduct = await inventory.findMany({
+  const idList = inventoryData.map((i) => i.id);
+  const selectedProducts = await inventory.findMany({
     where: {
       id: {
-        in: inventoryData.map((i) => i.id),
+        in: idList,
       },
     },
   });
 
-  if (
-    selectedProduct.length !== inventoryData.length ||
-    selectedProduct.every((o1) => {
-      const o2 = inventoryData.find((o2) => o2.id === o1.id);
-      return (
-        o2.price !== o1.price ||
-        o1.count < o2.count ||
-        o2.warranty !== o1.warranty
+  const isValid =
+    selectedProducts.length === inventoryData.length &&
+    selectedProducts.every((product) => {
+      const inventoryItem = inventoryData.find(
+        (item) => item.id === product.id
       );
-    })
-  )
+      return (
+        inventoryItem.price === product.price &&
+        inventoryItem.count <= product.count &&
+        inventoryItem.warranty === product.warranty
+      );
+    });
+
+  if (!isValid)
     return next(
       new ErrorHandler(
         'invalid productId or insuffiecent product count',
@@ -44,16 +48,17 @@ const sellProduct = asyncHandler(async (req, res, next) => {
     );
 
   return prisma.$transaction(async (tx) => {
-    const newCustomer = name
-      ? await tx.customer.create({
-          data: {
-            name,
-            phone,
-          },
-        })
-      : {
-          id: null,
-        };
+    const soldItems = inventoryData.map((item) => {
+      return {
+        count: item.count,
+        productId: item.productId,
+        customerName: name,
+        customerPhone: phone,
+        price: item.price,
+        warranty: item.warranty,
+        storeId: req.user.storeId,
+      };
+    });
 
     const transactionArray = inventoryData.map((x) =>
       tx.inventory.update({
@@ -67,19 +72,9 @@ const sellProduct = asyncHandler(async (req, res, next) => {
         },
       })
     );
-
     transactionArray.unshift(
       tx.sold.createMany({
-        data: inventoryData.map((x) => {
-          return {
-            count: x.count,
-            productId: x.productId,
-            customerId: newCustomer.id,
-            price: x.price,
-            warranty: x.warranty,
-            storeId: req.user.storeId,
-          };
-        }),
+        data: soldItems,
       })
     );
 
@@ -89,7 +84,7 @@ const sellProduct = asyncHandler(async (req, res, next) => {
   });
 });
 
-const getInventory = asyncHandler(async (req, res) => {
+const getStoreProducts = async (modal, req, res) => {
   const populate = {
     product: true,
   };
@@ -105,6 +100,10 @@ const getInventory = asyncHandler(async (req, res) => {
         .string()
         .min(3, 'product name must be at least 3 characters long')
         .max(50, 'product name must be at most 50 characters long')
+        .optional(),
+      customerPhone: z
+        .string()
+        .regex(/^\+?\d{10,15}$/)
         .optional(),
     })
     .parse(req.query);
@@ -125,10 +124,10 @@ const getInventory = asyncHandler(async (req, res) => {
     },
   };
 
-  const result = await advancedResult(inventory, query, populate);
+  const result = await advancedResult(modal, query, populate);
 
-  res.json(result);
-});
+  return res.json(result);
+};
 
 const createInventory = asyncHandler(async (req, res, next) => {
   const { productId, count, price, warranty } = req.body;
@@ -177,28 +176,19 @@ const manageInventory = asyncHandler(async (req, res, next) => {
       )
     );
 
-  const updateInventory = await modal.upsert({
-    where: {
-      productId_storeId: {
-        productId,
-        storeId: req.user.storeId,
-      },
-    },
-    update: {
-      count: {
-        increment: count,
-      },
-    },
-    create: {
+  const result = await modal.create({
+    data: {
       count,
       productId,
       warranty: selectSold.warranty,
       price: selectSold.price,
+      customerName: selectSold.customerName,
+      customerPhone: selectSold.customerPhone,
       storeId: req.user.storeId,
     },
   });
 
-  return res.json(updateInventory);
+  return res.json(result);
 });
 
 const returnProduct = asyncHandler(async (req, res, next) => {
@@ -211,8 +201,27 @@ const claimWarrenty = asyncHandler(async (req, res, next) => {
   manageInventory(req, res, next);
 });
 
+const getInventory = asyncHandler(async (req, res) =>
+  getStoreProducts(inventory, req, res)
+);
+
+const getSoldItems = asyncHandler(async (req, res) => {
+  getStoreProducts(sold, req, res);
+});
+
+const getWarranty = asyncHandler(async (req, res) =>
+  getStoreProducts(warranty, req, res)
+);
+
+const getReturnedProducts = asyncHandler(async (req, res) =>
+  getStoreProducts(returned, req, res)
+);
+
 module.exports = {
   getInventory,
+  getSoldItems,
+  getWarranty,
+  getReturnedProducts,
   sellProduct,
   returnProduct,
   claimWarrenty,
