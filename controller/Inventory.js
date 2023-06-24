@@ -151,7 +151,7 @@ const createInventory = asyncHandler(async (req, res, next) => {
 });
 
 const manageInventory = asyncHandler(async (req, res, next) => {
-  const { productId, count } = req.body;
+  const { id, count } = req.body;
   const { modal } = req;
 
   if (!productId || !count)
@@ -161,14 +161,11 @@ const manageInventory = asyncHandler(async (req, res, next) => {
 
   const selectSold = await sold.findUnique({
     where: {
-      productId_storeId: {
-        productId,
-        storeId: req.user.storeId,
-      },
+      id,
     },
   });
 
-  if (!selectSold)
+  if (!selectSold || selectSold.storeId !== req.user.storeId)
     return next(
       ErrorHandler(
         'No such product was sold',
@@ -176,17 +173,30 @@ const manageInventory = asyncHandler(async (req, res, next) => {
       )
     );
 
-  const result = await modal.create({
-    data: {
-      count,
-      productId,
-      warranty: selectSold.warranty,
-      price: selectSold.price,
-      customerName: selectSold.customerName,
-      customerPhone: selectSold.customerPhone,
-      storeId: req.user.storeId,
-    },
-  });
+  const [result] = prisma.$transaction([
+    modal.create({
+      data: {
+        count,
+        productId: selectSold.productId,
+        warranty: selectSold.warranty,
+        price: selectSold.price,
+        customerName: selectSold.customerName,
+        customerPhone: selectSold.customerPhone,
+        storeId: selectSold.storeId,
+      },
+    }),
+    count === selectSold.count
+      ? sold.delete({
+          where: { id },
+        })
+      : sold.update({
+          data: {
+            count: {
+              decrement: count,
+            },
+          },
+        }),
+  ]);
 
   return res.json(result);
 });
