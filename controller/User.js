@@ -5,6 +5,7 @@ const asyncHandler = require('../middleware/AsyncHandler');
 const ErrorHandler = require('../middleware/ErrorHandler');
 const sendEmail = require('../utils/sendEmail');
 const { issueJWT } = require('../utils/issueJwt');
+const advanceResults = require('../middleware/AdvancedResults');
 
 const verifyEmail = asyncHandler(async (req, res, next) => {
   const emailVerificationToken = crypto
@@ -173,6 +174,16 @@ const currentUser = asyncHandler(async (req, res) => {
   res.json(req.user);
 });
 
+const getEmployees = asyncHandler(async (req, res) => {
+  req.query = {
+    storeId: req.user.storeId,
+  };
+
+  const result = await advanceResults(user, req.query);
+
+  return res.json(result);
+});
+
 module.exports = {
   isEmailAvailable,
   sendVerificationEmail,
@@ -180,4 +191,5 @@ module.exports = {
   verifyEmail,
   changePassword,
   currentUser,
+  getEmployees,
 };
