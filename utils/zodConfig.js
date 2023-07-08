@@ -46,7 +46,31 @@ const productGetSchema = z.object({
   all: z.enum(['true']).optional(),
 });
 
+const employeeSchema = z.object({
+  name: z
+    .string()
+    .min(3, 'minimum 3 characters required for name')
+    .max(32, 'maximum 32 characters accepted for name'),
+  email: z
+    .string()
+    .email('text is not of type email')
+    .min(3, 'minimum 3 characters required for email')
+    .max(50, 'maximum 50 characters accepted for email'),
+  password: z
+    .string()
+    .regex(new RegExp('.*[A-Z].*'), 'One uppercase character')
+    .regex(new RegExp('.*[a-z].*'), 'One lowercase character')
+    .regex(new RegExp('.*\\d.*'), 'One number')
+    .regex(
+      new RegExp('.*[`~<>?,./!@#$%^&*()\\-_+="\'|{}\\[\\];:\\\\].*'),
+      'One special character'
+    )
+    .min(8, 'Must be at least 8 characters in length for password')
+    .max(50, 'maximum 32 characters accepted for password'),
+});
+
 module.exports = {
   signUpSchema,
   productGetSchema,
+  employeeSchema,
 };

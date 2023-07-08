@@ -6,6 +6,7 @@ const ErrorHandler = require('../middleware/ErrorHandler');
 const sendEmail = require('../utils/sendEmail');
 const { issueJWT } = require('../utils/issueJwt');
 const advanceResults = require('../middleware/AdvancedResults');
+const { employeeSchema } = require('../utils/zodConfig');
 
 const verifyEmail = asyncHandler(async (req, res, next) => {
   const emailVerificationToken = crypto
@@ -184,6 +185,24 @@ const getEmployees = asyncHandler(async (req, res) => {
   return res.json(result);
 });
 
+const createEmployee = asyncHandler(async (req, res, next) => {
+  const { name, password, email } = employeeSchema.parse(req.body);
+
+  const result = await user.create({
+    data: {
+      name,
+      email,
+      password,
+      resetPasswordExpire: new Date().toISOString(),
+      provider: 'EMAIL',
+      role: 'STOREEMPLOYEE',
+      storeId: req.user.storeId,
+    },
+  });
+
+  return res.json(result);
+});
+
 module.exports = {
   isEmailAvailable,
   sendVerificationEmail,
@@ -192,4 +211,5 @@ module.exports = {
   changePassword,
   currentUser,
   getEmployees,
+  createEmployee,
 };
