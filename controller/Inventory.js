@@ -229,6 +229,21 @@ const getReturnedProducts = asyncHandler(async (req, res) =>
   getStoreProducts(returned, req, res)
 );
 
+const deleteInventory = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  await inventory.delete({
+    where: {
+      id_storeId: {
+        id,
+        storeId: req.user.storeId,
+      },
+    },
+  });
+
+  return res.json('');
+});
+
 module.exports = {
   getInventory,
   getSoldItems,
@@ -238,4 +253,5 @@ module.exports = {
   returnProduct,
   claimWarrenty,
   createInventory,
+  deleteInventory,
 };

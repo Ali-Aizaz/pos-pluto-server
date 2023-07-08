@@ -178,6 +178,7 @@ const currentUser = asyncHandler(async (req, res) => {
 const getEmployees = asyncHandler(async (req, res) => {
   req.query = {
     storeId: req.user.storeId,
+    role: 'STOREEMPLOYEE',
   };
 
   const result = await advanceResults(user, req.query);
@@ -203,6 +204,20 @@ const createEmployee = asyncHandler(async (req, res, next) => {
   return res.json(result);
 });
 
+const deleteEmployee = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  await user.delete({
+    where: {
+      id_storeId: {
+        id,
+        storeId: req.user.storeId,
+      },
+    },
+  });
+
+  return res.json('');
+});
+
 module.exports = {
   isEmailAvailable,
   sendVerificationEmail,
@@ -212,4 +227,5 @@ module.exports = {
   currentUser,
   getEmployees,
   createEmployee,
+  deleteEmployee,
 };

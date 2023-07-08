@@ -6,6 +6,8 @@ const {
   sellProduct,
   claimWarrenty,
   returnProduct,
+  createInventory,
+  deleteInventory,
 } = require('../controller/Inventory');
 const { protect } = require('../middleware/Protect');
 
@@ -16,8 +18,11 @@ router.get('/sold', protect, getSoldItems);
 router.get('/returned', protect, getReturnedProducts);
 router.get('/warranty', protect, getWarranty);
 
-router.post('/inventory', protect, sellProduct);
+router.post('/inventory', protect, createInventory);
+router.post('/inventory/sell', protect, sellProduct);
 router.post('/inventory/return', protect, returnProduct);
 router.post('/inventory/warrenty', protect, claimWarrenty);
+
+router.delete('/inventory/:id', protect, deleteInventory);
 
 module.exports = router;
