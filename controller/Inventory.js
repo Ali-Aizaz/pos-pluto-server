@@ -114,13 +114,15 @@ const getStoreProducts = async (modal, req, res) => {
 
   query.product = categoryName && {
     categoryName: {
-      search: categoryName,
+      contains: categoryName,
+      mode: 'insensitive',
     },
   };
 
   query.product = search && {
     name: {
-      search,
+      contains: search,
+      mode: 'insensitive',
     },
   };
 

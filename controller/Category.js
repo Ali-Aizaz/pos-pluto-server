@@ -17,7 +17,8 @@ const getCategories = asyncHandler(async (req, res, next) => {
 
   const query = search && {
     name: {
-      search,
+      contains: search,
+      mode: 'insensitive',
     },
   };
 

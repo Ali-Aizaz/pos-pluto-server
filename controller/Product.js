@@ -17,8 +17,9 @@ const getProducts = asyncHandler(async (req, res) => {
   req.query.categoryName = categoryName && {
     search: categoryName,
   };
-  req.query.name = {
-    search,
+  req.query.name = search && {
+    contains: search,
+    mode: 'insensitive',
   };
 
   req.query.inventory = !all && {
