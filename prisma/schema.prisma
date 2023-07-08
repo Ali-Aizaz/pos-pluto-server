@@ -4,38 +4,36 @@ generator client {
 }
 
 datasource db {
-  provider          = "postgresql"
-  url               = env("POSTGRES_PRISMA_URL") // uses connection pooling
-  directUrl         = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
-  shadowDatabaseUrl = env("POSTGRES_URL_NON_POOLING") // used for migrations
+  provider = "mongodb"
+  url      = env("MONGO_URI") // uses connection pooling
 }
 
 model User {
-  id                     String   @id @unique @default(uuid())
-  name                   String   @db.VarChar(255)
-  email                  String   @unique @db.VarChar(255)
-  password               String   @db.VarChar(255)
-  imageUrl               String?  @db.VarChar(255)
+  id                     String   @id @default(auto()) @map("_id") @db.ObjectId
+  name                   String
+  email                  String   @unique
+  password               String
+  imageUrl               String?
   provider               Provider @default(EMAIL)
   role                   Role     @default(STOREOWNER)
-  resetPasswordToken     String?  @db.VarChar(255)
-  lastCredentialChange   DateTime @default(now()) @db.Timestamp(6)
-  resetPasswordExpire    DateTime @default(now()) @db.Timestamp(6)
-  emailVerificationToken String?  @db.VarChar(255)
+  resetPasswordToken     String?
+  lastCredentialChange   DateTime @default(now()) @db.Timestamp
+  resetPasswordExpire    DateTime @default(now()) @db.Timestamp
+  emailVerificationToken String?
   isEmailVerified        Boolean  @default(false)
-  createdAt              DateTime @default(now()) @db.Timestamp(6)
-  updatedAt              DateTime @updatedAt @db.Timestamp(6)
-  storeId                String   @db.Uuid
+  createdAt              DateTime @default(now()) @db.Timestamp
+  updatedAt              DateTime @updatedAt @db.Timestamp
+  storeId                String   @db.ObjectId
   store                  Store    @relation(fields: [storeId], references: [id])
 }
 
 model Product {
-  id           String      @id @unique @default(uuid()) @db.Uuid
-  name         String      @db.VarChar(255)
-  imageUrl     String?     @db.VarChar(255)
-  createdAt    DateTime    @default(now()) @db.Timestamp(6)
-  updatedAt    DateTime    @updatedAt @db.Timestamp(6)
-  categoryName String      @db.VarChar(255)
+  id           String      @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  imageUrl     String?
+  createdAt    DateTime    @default(now()) @db.Timestamp
+  updatedAt    DateTime    @updatedAt @db.Timestamp
+  categoryName String
   category     Category    @relation(fields: [categoryName], references: [name])
   details      Json
   inventory    Inventory[]
@@ -47,84 +45,83 @@ model Product {
 }
 
 model Category {
-  id           String    @id @unique @default(uuid()) @db.Uuid
-  name         String    @unique @db.VarChar(255)
-  createdAt    DateTime  @default(now()) @db.Timestamp(6)
-  updatedAt    DateTime  @updatedAt @db.Timestamp(6)
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+  name         String    @unique
+  createdAt    DateTime  @default(now()) @db.Timestamp
+  updatedAt    DateTime  @updatedAt @db.Timestamp
   product      Product[]
   categoryData String[]
 }
 
 model Inventory {
-  id        String   @id @unique @default(uuid()) @db.Uuid
-  count     Int      @default(1) @db.Integer
-  price     Int      @db.Integer
-  warranty  Int      @db.Integer
-  createdAt DateTime @default(now()) @db.Timestamp(6)
-  updatedAt DateTime @updatedAt @db.Timestamp(6)
-  storeId   String   @db.Uuid
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  count     Int      @default(1) @db.Int
+  price     Int      @db.Int
+  warranty  Int      @db.Int
+  createdAt DateTime @default(now()) @db.Timestamp
+  updatedAt DateTime @updatedAt @db.Timestamp
+  storeId   String   @db.ObjectId
   store     Store    @relation(fields: [storeId], references: [id])
-  productId String   @db.Uuid
+  productId String   @db.ObjectId
   product   Product  @relation(fields: [productId], references: [id])
 
   @@unique([productId, storeId])
-  @@index([productId, storeId])
   @@index([productId])
   @@index([storeId])
 }
 
 model Sold {
-  id            String   @id @unique @default(uuid()) @db.Uuid
-  count         Int      @default(1) @db.Integer
-  price         Int      @db.Integer
-  warranty      Int      @db.Integer
-  createdAt     DateTime @default(now()) @db.Timestamp(6)
-  updatedAt     DateTime @updatedAt @db.Timestamp(6)
-  storeId       String   @db.Uuid
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  count         Int      @default(1) @db.Int
+  price         Int      @db.Int
+  warranty      Int      @db.Int
+  createdAt     DateTime @default(now()) @db.Timestamp
+  updatedAt     DateTime @updatedAt @db.Timestamp
+  storeId       String   @db.ObjectId
   store         Store    @relation(fields: [storeId], references: [id])
-  productId     String   @db.Uuid
+  productId     String   @db.ObjectId
   product       Product  @relation(fields: [productId], references: [id])
-  customerName  String?  @db.VarChar(255)
-  customerPhone String?  @db.VarChar(255)
+  customerName  String?
+  customerPhone String?
 }
 
 model Returned {
-  id            String   @id @unique @default(uuid()) @db.Uuid
-  count         Int      @default(1) @db.Integer
-  price         Int      @db.Integer
-  warranty      Int      @db.Integer
-  createdAt     DateTime @default(now()) @db.Timestamp(6)
-  updatedAt     DateTime @updatedAt @db.Timestamp(6)
-  storeId       String   @db.Uuid
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  count         Int      @default(1) @db.Int
+  price         Int      @db.Int
+  warranty      Int      @db.Int
+  createdAt     DateTime @default(now()) @db.Timestamp
+  updatedAt     DateTime @updatedAt @db.Timestamp
+  storeId       String   @db.ObjectId
   store         Store    @relation(fields: [storeId], references: [id])
-  productId     String   @db.Uuid
+  productId     String   @db.ObjectId
   product       Product  @relation(fields: [productId], references: [id])
-  customerName  String?  @db.VarChar(255)
-  customerPhone String?  @db.VarChar(255)
+  customerName  String?
+  customerPhone String?
 }
 
 model Warranty {
-  id            String   @id @unique @default(uuid()) @db.Uuid
-  count         Int      @default(1) @db.Integer
-  price         Int      @db.Integer
-  warranty      Int      @db.Integer
-  createdAt     DateTime @default(now()) @db.Timestamp(6)
-  updatedAt     DateTime @updatedAt @db.Timestamp(6)
-  storeId       String   @db.Uuid
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  count         Int      @default(1) @db.Int
+  price         Int      @db.Int
+  warranty      Int      @db.Int
+  createdAt     DateTime @default(now()) @db.Timestamp
+  updatedAt     DateTime @updatedAt @db.Timestamp
+  storeId       String   @db.ObjectId
   store         Store    @relation(fields: [storeId], references: [id])
-  productId     String   @db.Uuid
+  productId     String   @db.ObjectId
   product       Product  @relation(fields: [productId], references: [id])
-  customerName  String?  @db.VarChar(255)
-  customerPhone String?  @db.VarChar(255)
+  customerName  String?
+  customerPhone String?
 }
 
 model Store {
-  id          String      @id @unique @default(uuid()) @db.Uuid
-  name        String      @db.VarChar(255)
-  description String      @db.VarChar(255)
-  imageUrl    String?     @db.VarChar(255)
-  createdAt   DateTime    @default(now()) @db.Timestamp(6)
-  updatedAt   DateTime    @updatedAt @db.Timestamp(6)
+  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String
+  imageUrl    String?
+  createdAt   DateTime    @default(now()) @db.Timestamp
+  updatedAt   DateTime    @updatedAt @db.Timestamp
   user        User[]
   inventory   Inventory[]
   sold        Sold[]
