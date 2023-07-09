@@ -134,7 +134,7 @@ const getStoreProducts = async (modal, req, res) => {
 const createInventory = asyncHandler(async (req, res, next) => {
   const { productId, count, price, warranty } = req.body;
 
-  if (!productId || !count || !price || !warranty)
+  if (!productId || !count || !price)
     return next(
       new ErrorHandler('Incomplete Fields', StatusCode.ClientErrorBadRequest)
     );
@@ -144,7 +144,7 @@ const createInventory = asyncHandler(async (req, res, next) => {
       count,
       price,
       productId,
-      warranty,
+      warranty: warranty || 0,
       storeId: req.user.storeId,
     },
   });
@@ -152,11 +152,34 @@ const createInventory = asyncHandler(async (req, res, next) => {
   return res.json(newInventory);
 });
 
+const updateInventory = asyncHandler(async (req, res, next) => {
+  const { id, count } = req.body;
+
+  if (!id || !count)
+    return next(
+      new ErrorHandler('Incomplete Fields', StatusCode.ClientErrorBadRequest)
+    );
+
+  const result = await inventory.update({
+    where: {
+      id_storeId: {
+        id,
+        storeId: req.user.storeId,
+      },
+    },
+    data: {
+      count,
+    },
+  });
+
+  return res.json(result);
+});
+
 const manageInventory = asyncHandler(async (req, res, next) => {
   const { id, count } = req.body;
   const { modal } = req;
 
-  if (!productId || !count)
+  if (!id || !count)
     return next(
       new ErrorHandler('Incomplete Fields', StatusCode.ClientErrorBadRequest)
     );
@@ -254,4 +277,5 @@ module.exports = {
   claimWarrenty,
   createInventory,
   deleteInventory,
+  updateInventory,
 };
