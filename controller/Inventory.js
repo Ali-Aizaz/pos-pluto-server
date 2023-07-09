@@ -84,51 +84,57 @@ const sellProduct = asyncHandler(async (req, res, next) => {
   });
 });
 
-const getStoreProducts = async (modal, req, res) => {
+const getStoreProducts = async (modal, req, res, next) => {
   const populate = {
     product: true,
   };
+  try {
+    const { categoryName, search, customerPhone } = z
+      .object({
+        categoryName: z
+          .string()
+          .min(3, 'category name must be at least 3 characters long')
+          .max(50, 'category name must be at most 50 characters long')
+          .optional(),
+        search: z
+          .string()
+          .min(3, 'product name must be at least 3 characters long')
+          .max(50, 'product name must be at most 50 characters long')
+          .optional(),
+        customerPhone: z
+          .string()
+          .regex(/^\+?\d{3,15}$/)
+          .optional(),
+      })
+      .parse(req.query);
 
-  const { categoryName, search } = z
-    .object({
-      categoryName: z
-        .string()
-        .min(3, 'category name must be at least 3 characters long')
-        .max(50, 'category name must be at most 50 characters long')
-        .optional(),
-      search: z
-        .string()
-        .min(3, 'product name must be at least 3 characters long')
-        .max(50, 'product name must be at most 50 characters long')
-        .optional(),
-      customerPhone: z
-        .string()
-        .regex(/^\+?\d{10,15}$/)
-        .optional(),
-    })
-    .parse(req.query);
+    const query = {
+      storeId: req.user.storeId,
+    };
 
-  const query = {
-    storeId: req.user.storeId,
-  };
+    query.product = categoryName && {
+      categoryName: {
+        contains: categoryName,
+        mode: 'insensitive',
+      },
+    };
 
-  query.product = categoryName && {
-    categoryName: {
-      contains: categoryName,
-      mode: 'insensitive',
-    },
-  };
+    query.product = search && {
+      name: {
+        contains: search,
+        mode: 'insensitive',
+      },
+    };
 
-  query.product = search && {
-    name: {
-      contains: search,
-      mode: 'insensitive',
-    },
-  };
+    query.customerPhone = customerPhone && {
+      contains: customerPhone,
+    };
 
-  const result = await advancedResult(modal, query, populate);
-
-  return res.json(result);
+    const result = await advancedResult(modal, query, populate);
+    return res.json(result);
+  } catch (e) {
+    return next(e);
+  }
 };
 
 const createInventory = asyncHandler(async (req, res, next) => {
@@ -236,20 +242,20 @@ const claimWarrenty = asyncHandler(async (req, res, next) => {
   manageInventory(req, res, next);
 });
 
-const getInventory = asyncHandler(async (req, res) =>
-  getStoreProducts(inventory, req, res)
+const getInventory = asyncHandler(async (req, res, next) =>
+  getStoreProducts(inventory, req, res, next)
 );
 
-const getSoldItems = asyncHandler(async (req, res) => {
-  getStoreProducts(sold, req, res);
+const getSoldItems = asyncHandler(async (req, res, next) => {
+  getStoreProducts(sold, req, res, next);
 });
 
-const getWarranty = asyncHandler(async (req, res) =>
-  getStoreProducts(warranty, req, res)
+const getWarranty = asyncHandler(async (req, res, next) =>
+  getStoreProducts(warranty, req, res, next)
 );
 
-const getReturnedProducts = asyncHandler(async (req, res) =>
-  getStoreProducts(returned, req, res)
+const getReturnedProducts = asyncHandler(async (req, res, next) =>
+  getStoreProducts(returned, req, res, next)
 );
 
 const deleteInventory = asyncHandler(async (req, res) => {
