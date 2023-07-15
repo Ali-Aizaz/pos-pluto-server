@@ -12,6 +12,13 @@ const signUpWithIdPassword = asyncHandler(async (req, res) => {
   const { storeName, storeDescription, name, email, password } =
     signUpSchema.parse(req.body);
 
+  const isEmailPresent = await user.findUnique({ where: { email } });
+
+  if (isEmailPresent)
+    return res
+      .status(StatusCode.ClientErrorConflict)
+      .json('email is unavailable');
+
   const newUser = await store.create({
     data: {
       name: storeName,
@@ -27,6 +34,7 @@ const signUpWithIdPassword = asyncHandler(async (req, res) => {
       },
     },
   });
+
   const jwt = issueJWT(newUser.id);
 
   res.set({ Authorization: jwt.token });
