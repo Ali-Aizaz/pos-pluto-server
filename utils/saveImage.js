@@ -1,9 +1,9 @@
 const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
+const { bucket } = require('./storage');
 
 const decodeBase64Image = (dataString) => {
   const matches = dataString.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
+
   const response = {};
   if (matches?.length !== 3) {
     return new Error('Invalid input string');
@@ -15,8 +15,7 @@ const decodeBase64Image = (dataString) => {
   return response;
 };
 
-const saveImage = (image, folder, oldImageUrl) => {
-  const directory = path.join(__dirname, '..', `static/${folder}/`);
+const saveImage = async (image, folder, oldImageUrl) => {
   const imageTypeRegularExpression = /\/(.*?)$/;
 
   const seed = crypto.randomBytes(20);
@@ -27,17 +26,29 @@ const saveImage = (image, folder, oldImageUrl) => {
   let filename = `${uniqueSHA1String}.`;
   if (imageTypeDetected !== undefined) filename += imageTypeDetected[1];
 
-  fs.mkdirSync(directory, { recursive: true });
-  if (imageBuffer.data !== undefined)
-    fs.writeFileSync(directory + filename, imageBuffer.data);
+  let options = {
+    destination: `${folder}/${filename}`,
+    metadata: {
+      contentType: imageBuffer.type,
+    },
+  };
 
-  const imagePath = `${process.env.SERVER_ROOT_URI}/static/${folder}/${filename}`;
+  if (imageBuffer.data === undefined) return null;
+
+  let [file] = await bucket().upload(imageBuffer.data, options);
+
+  console.log(file, imageBuffer);
+
+  const imagePath = await file.getSignedUrl({
+    action: 'read',
+    expires: '03-17-2025',
+  });
 
   if (oldImageUrl) {
     try {
       const oldImage = oldImageUrl.split('/').at(-1);
       console.log(oldImage);
-      fs.unlinkSync(directory + oldImage);
+      await bucket().file(`${folder}/${oldImage}`).delete();
     } catch (e) {
       console.log(e);
     }

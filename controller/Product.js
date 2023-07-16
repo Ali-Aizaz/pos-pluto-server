@@ -4,6 +4,7 @@ const { product, category } = require('../config');
 const advancedResults = require('../middleware/AdvancedResults');
 const ErrorHandler = require('../middleware/ErrorHandler');
 const { productGetSchema } = require('../utils/zodConfig');
+const { saveImage } = require('../utils/saveImage');
 
 const getProducts = asyncHandler(async (req, res) => {
   const { categoryName, include, search, all } = productGetSchema.parse(
@@ -53,7 +54,7 @@ const getProductById = asyncHandler(async (req, res, next) => {
 });
 
 const createProduct = asyncHandler(async (req, res, next) => {
-  const { name, content, category: providedCategory } = req.query;
+  const { name, content, category: providedCategory, image } = req.body;
 
   const contentKeys = Object.keys(content);
 
@@ -89,6 +90,15 @@ const createProduct = asyncHandler(async (req, res, next) => {
     },
   });
 
+  let url;
+  if (image) {
+    url = await saveImage(image, 'product');
+    if (url === null)
+      return next(
+        new ErrorHandler('invalid image', StatusCode.ClientErrorBadRequest)
+      );
+  }
+
   if (!selectedCategory) {
     const newProduct = await category.create({
       data: {
@@ -98,7 +108,8 @@ const createProduct = asyncHandler(async (req, res, next) => {
           create: {
             name,
             details: content,
-            categoryId: categoryId.id,
+            categoryName: selectedCategory.id,
+            imageUrl: url,
           },
         },
       },
@@ -106,26 +117,28 @@ const createProduct = asyncHandler(async (req, res, next) => {
     });
 
     return res.json(newProduct.product);
-  } else {
-    if (selectedCategory.categoryData !== contentKeys)
-      return next(
-        new ErrorHandler(
-          'invalid product fields',
-          StatusCode.ClientErrorBadRequest
-        )
-      );
-    const newProduct = await product.create({
-      data: {
-        name,
-        details: content,
-        count,
-        categoryId: categoryId.id,
-        price,
-      },
-    });
-
-    return res.json(newProduct);
   }
+
+  if (
+    JSON.stringify(selectedCategory.categoryData) !==
+    JSON.stringify(contentKeys)
+  )
+    return next(
+      new ErrorHandler(
+        'invalid product fields',
+        StatusCode.ClientErrorBadRequest
+      )
+    );
+  const newProduct = await product.create({
+    data: {
+      name,
+      details: content,
+      categoryName: selectedCategory.id,
+      imageUrl: url,
+    },
+  });
+
+  return res.json(newProduct);
 });
 
 module.exports = { getProducts, getProductById, createProduct };

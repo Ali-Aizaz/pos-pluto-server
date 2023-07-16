@@ -25,11 +25,6 @@ const getCategories = asyncHandler(async (req, res, next) => {
   const populate = {};
 
   if (include) populate[include] = { take: 10 };
-  else
-    query.select = {
-      name: true,
-      id: true,
-    };
 
   const result = await advancedResults(category, query, populate);
 

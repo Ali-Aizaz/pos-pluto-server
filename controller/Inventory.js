@@ -161,7 +161,7 @@ const createInventory = asyncHandler(async (req, res, next) => {
 const updateInventory = asyncHandler(async (req, res, next) => {
   const { id, count } = req.body;
 
-  if (!id || !count)
+  if (!id || count === undefined || count === null)
     return next(
       new ErrorHandler('Incomplete Fields', StatusCode.ClientErrorBadRequest)
     );
