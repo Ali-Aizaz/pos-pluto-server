@@ -198,7 +198,7 @@ const manageInventory = asyncHandler(async (req, res, next) => {
 
   if (!selectSold || selectSold.storeId !== req.user.storeId)
     return next(
-      ErrorHandler(
+      new ErrorHandler(
         'No such product was sold',
         StatusCode.ClientErrorPreconditionFailed
       )
