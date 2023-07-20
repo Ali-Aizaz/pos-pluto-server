@@ -20,22 +20,24 @@ const signUpWithIdPassword = asyncHandler(async (req, res, next) => {
       .status(StatusCode.ClientErrorConflict)
       .json('email is unavailable');
 
-  const imageUrl = image ? await saveImage(image) : undefined;
-
-  if (imageUrl === null)
-    return next(
-      new ErrorHandler('Invalid image', StatusCode.ClientErrorBadRequest)
-    );
+  let url;
+  if (image) {
+    url = await saveImage(image, 'product');
+    if (url === null)
+      return next(
+        new ErrorHandler('invalid image', StatusCode.ClientErrorBadRequest)
+      );
+  }
 
   const newUser = await store.create({
     data: {
       name: storeName,
       description: storeDescription,
+      imageUrl: url,
       user: {
         create: {
           name,
           email,
-          imageUrl,
           password: bcrypt.hashSync(password, 10),
           provider: req.provider || 'EMAIL',
           resetPasswordExpire: new Date().toISOString(),

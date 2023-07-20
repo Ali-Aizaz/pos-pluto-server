@@ -46,24 +46,18 @@ const saveImage = async (image, oldImageUrl) => {
 
   await s3.upload(options).promise();
 
-  const imagePath = await s3.getSignedUrlPromise('getObject', {
-    Bucket: folder,
-    Key: filename,
-  });
-
   if (oldImageUrl) {
     try {
-      const oldImageKey = oldImageUrl.split('/').pop().split('?')[0];
       await s3.deleteObject({
         Bucket: folder,
-        Key: oldImageKey,
+        Key: oldImageUrl,
       });
     } catch (e) {
       console.log(e);
     }
   }
 
-  return imagePath;
+  return filename;
 };
 
 exports.saveImage = saveImage;
