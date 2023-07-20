@@ -204,7 +204,7 @@ const manageInventory = asyncHandler(async (req, res, next) => {
       )
     );
 
-  const [result] = prisma.$transaction([
+  const [result] = await prisma.$transaction([
     modal.create({
       data: {
         count,
@@ -226,6 +226,7 @@ const manageInventory = asyncHandler(async (req, res, next) => {
               decrement: count,
             },
           },
+          where: { id },
         }),
   ]);
 
