@@ -7,9 +7,10 @@ const { sendEmail } = require('../utils/sendEmail');
 const { default: StatusCode } = require('status-code-enum');
 const { z } = require('zod');
 const { signUpSchema } = require('../utils/zodConfig');
+const { saveImage } = require('../utils/saveImage');
 
-const signUpWithIdPassword = asyncHandler(async (req, res) => {
-  const { storeName, storeDescription, name, email, password } =
+const signUpWithIdPassword = asyncHandler(async (req, res, next) => {
+  const { storeName, storeDescription, name, email, password, image } =
     signUpSchema.parse(req.body);
 
   const isEmailPresent = await user.findUnique({ where: { email } });
@@ -19,14 +20,22 @@ const signUpWithIdPassword = asyncHandler(async (req, res) => {
       .status(StatusCode.ClientErrorConflict)
       .json('email is unavailable');
 
+  const imageUrl = image ? await saveImage(image) : undefined;
+
+  if (imageUrl === null)
+    return next(
+      new ErrorHandler('Invalid image', StatusCode.ClientErrorBadRequest)
+    );
+
   const newUser = await store.create({
     data: {
       name: storeName,
       description: storeDescription,
       user: {
         create: {
-          name: name,
-          email: email,
+          name,
+          email,
+          imageUrl,
           password: bcrypt.hashSync(password, 10),
           provider: req.provider || 'EMAIL',
           resetPasswordExpire: new Date().toISOString(),

@@ -5,6 +5,7 @@ const signUpSchema = z.object({
     .string()
     .min(3, 'minimum 3 characters required for store name')
     .max(32, 'maximum 32 characters accepted for store name'),
+  image: z.string().optional(),
   storeDescription: z
     .string()
     .min(3, 'minimum 3 characters required for store description')

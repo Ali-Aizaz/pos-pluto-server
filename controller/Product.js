@@ -108,7 +108,7 @@ const createProduct = asyncHandler(async (req, res, next) => {
           create: {
             name,
             details: content,
-            categoryName: selectedCategory.id,
+            categoryName: providedCategory,
             imageUrl: url,
           },
         },
@@ -129,11 +129,12 @@ const createProduct = asyncHandler(async (req, res, next) => {
         StatusCode.ClientErrorBadRequest
       )
     );
+
   const newProduct = await product.create({
     data: {
       name,
       details: content,
-      categoryName: selectedCategory.id,
+      categoryName: selectedCategory.name,
       imageUrl: url,
     },
   });

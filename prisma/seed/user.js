@@ -11,6 +11,8 @@ module.exports = async function ({ store }) {
     data: {
       name: 'Aslam Store',
       description: 'Electronics Store',
+      imageUrl:
+        'https://pluto-uploads.s3.ap-southeast-1.amazonaws.com/de0e85e99ff41c085d786008f36ad84725b2a83e.jpeg?AWSAccessKeyId=AKIASIXNQ5QA3LDBZ2IR&Expires=1689872144&Signature=m0o067y12Inrd2LYyK3Powdu8gM%3D',
       user: {
         create: [
           {
@@ -44,6 +46,8 @@ module.exports = async function ({ store }) {
     data: {
       name: 'General Store',
       description: 'General Store for your everyday needs',
+      imageUrl:
+        'https://pluto-uploads.s3.ap-southeast-1.amazonaws.com/8a916e2059588322eba9628c161922b23bb6370b.jpeg?AWSAccessKeyId=AKIASIXNQ5QA3LDBZ2IR&Expires=1689874405&Signature=qPm7CVnNE1qoFN2aod9JjEf4iMw%3D',
       user: {
         create: [
           {

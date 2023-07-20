@@ -12,7 +12,6 @@ model User {
   name                   String
   email                  String   @unique
   password               String
-  imageUrl               String?
   provider               Provider @default(EMAIL)
   role                   Role     @default(STOREOWNER)
   resetPasswordToken     String?
@@ -78,6 +77,7 @@ model Sold {
   price         Int      @db.Int
   warranty      Int      @db.Int
   createdAt     DateTime @default(now()) @db.Timestamp
+  imageUrl      String?
   updatedAt     DateTime @updatedAt @db.Timestamp
   storeId       String   @db.ObjectId
   store         Store    @relation(fields: [storeId], references: [id])

@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { bucket } = require('./storage');
+const AWS = require('aws-sdk');
 
 const decodeBase64Image = (dataString) => {
   const matches = dataString.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
@@ -15,7 +15,16 @@ const decodeBase64Image = (dataString) => {
   return response;
 };
 
-const saveImage = async (image, folder, oldImageUrl) => {
+const saveImage = async (image, oldImageUrl) => {
+  const folder = 'pluto-uploads';
+
+  const s3 = new AWS.S3({
+    credentials: {
+      accessKeyId: process.env.ACCESS_KEY,
+      secretAccessKey: process.env.SECRET_ACCESS_KEY,
+    },
+  });
+
   const imageTypeRegularExpression = /\/(.*?)$/;
 
   const seed = crypto.randomBytes(20);
@@ -27,28 +36,28 @@ const saveImage = async (image, folder, oldImageUrl) => {
   if (imageTypeDetected !== undefined) filename += imageTypeDetected[1];
 
   let options = {
-    destination: `${folder}/${filename}`,
-    metadata: {
-      contentType: imageBuffer.type,
-    },
+    Bucket: folder,
+    Key: filename,
+    Body: imageBuffer.data,
+    ContentType: imageBuffer.type,
   };
 
   if (imageBuffer.data === undefined) return null;
 
-  let [file] = await bucket().upload(imageBuffer.data, options);
+  await s3.upload(options).promise();
 
-  console.log(file, imageBuffer);
-
-  const imagePath = await file.getSignedUrl({
-    action: 'read',
-    expires: '03-17-2025',
+  const imagePath = await s3.getSignedUrlPromise('getObject', {
+    Bucket: folder,
+    Key: filename,
   });
 
   if (oldImageUrl) {
     try {
-      const oldImage = oldImageUrl.split('/').at(-1);
-      console.log(oldImage);
-      await bucket().file(`${folder}/${oldImage}`).delete();
+      const oldImageKey = oldImageUrl.split('/').pop().split('?')[0];
+      await s3.deleteObject({
+        Bucket: folder,
+        Key: oldImageKey,
+      });
     } catch (e) {
       console.log(e);
     }
