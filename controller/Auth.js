@@ -44,9 +44,12 @@ const signUpWithIdPassword = asyncHandler(async (req, res, next) => {
         },
       },
     },
+    select: {
+      user: true,
+    },
   });
 
-  const jwt = issueJWT(newUser.id);
+  const jwt = issueJWT(newUser.user[0].id);
 
   res.set({ Authorization: jwt.token });
 

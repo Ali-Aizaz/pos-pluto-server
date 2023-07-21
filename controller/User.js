@@ -1,12 +1,12 @@
 const bcrypt = require('bcrypt');
 const { default: StatusCode } = require('status-code-enum');
-const { user } = require('../config');
+const { user, store } = require('../config');
 const asyncHandler = require('../middleware/AsyncHandler');
 const ErrorHandler = require('../middleware/ErrorHandler');
 const sendEmail = require('../utils/sendEmail');
 const { issueJWT } = require('../utils/issueJwt');
 const advanceResults = require('../middleware/AdvancedResults');
-const { employeeSchema } = require('../utils/zodConfig');
+const { employeeSchema, storeUpdateSchema } = require('../utils/zodConfig');
 
 const verifyEmail = asyncHandler(async (req, res, next) => {
   const emailVerificationToken = crypto
@@ -204,6 +204,42 @@ const createEmployee = asyncHandler(async (req, res, next) => {
   return res.json(result);
 });
 
+const updateStore = asyncHandler(async (req, res) => {
+  const { name, image, description } = storeUpdateSchema.parse(req.body);
+
+  const myStore = await store.findUnique({
+    where: { id: req.user.storeId },
+  });
+
+  let url;
+  let query = {
+    name: myStore.name,
+    description: myStore.description,
+    imageUrl: myStore.imageUrl,
+  };
+
+  if (image) {
+    url = await saveImage(image, myStore.imageUrl);
+    if (url === null)
+      return next(
+        new ErrorHandler('invalid image', StatusCode.ClientErrorBadRequest)
+      );
+    query.imageUrl = url;
+  }
+
+  if (name) query.name = name;
+  if (description) query.description = description;
+
+  const result = await store.update({
+    where: {
+      id: req.user.storeId,
+    },
+    data: query,
+  });
+
+  return res.json(result);
+});
+
 const deleteEmployee = asyncHandler(async (req, res) => {
   const { id } = req.params;
   await user.delete({
@@ -218,6 +254,15 @@ const deleteEmployee = asyncHandler(async (req, res) => {
   return res.json('');
 });
 
+const getStore = asyncHandler(async (req, res) => {
+  const result = await store.findUnique({
+    where: {
+      id: req.user.storeId,
+    },
+  });
+  return res.json(result);
+});
+
 module.exports = {
   isEmailAvailable,
   sendVerificationEmail,
@@ -228,4 +273,6 @@ module.exports = {
   getEmployees,
   createEmployee,
   deleteEmployee,
+  updateStore,
+  getStore,
 };

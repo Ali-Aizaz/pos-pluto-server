@@ -55,7 +55,6 @@ const getProductById = asyncHandler(async (req, res, next) => {
 
 const createProduct = asyncHandler(async (req, res, next) => {
   const { name, content, category: providedCategory, image } = req.body;
-
   const contentKeys = Object.keys(content);
 
   if (!name || !content)
@@ -92,7 +91,7 @@ const createProduct = asyncHandler(async (req, res, next) => {
 
   let url;
   if (image) {
-    url = await saveImage(image, 'product');
+    url = await saveImage(image);
     if (url === null)
       return next(
         new ErrorHandler('invalid image', StatusCode.ClientErrorBadRequest)
@@ -108,7 +107,6 @@ const createProduct = asyncHandler(async (req, res, next) => {
           create: {
             name,
             details: content,
-            categoryName: providedCategory,
             imageUrl: url,
           },
         },

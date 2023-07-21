@@ -70,8 +70,29 @@ const employeeSchema = z.object({
     .max(50, 'maximum 32 characters accepted for password'),
 });
 
+const storeUpdateSchema = z
+  .object({
+    name: z
+      .string()
+      .min(3, 'minimum 3 characters required for store name')
+      .max(32, 'maximum 32 characters accepted for store name'),
+    image: z.string().regex(/^data:image\/[a-z]+;base64,/, {
+      message:
+        'Image must be a valid base64 string with prefix "data:image/TYPE;base64,"',
+    }),
+    description: z
+      .string()
+      .min(3, 'minimum 3 characters required for store description')
+      .max(150, 'maximum 150 characters accepted for store description'),
+  })
+  .partial()
+  .refine((data) => Object.values(data).some((val) => val !== undefined), {
+    message: 'At least one field must be present',
+  });
+
 module.exports = {
   signUpSchema,
   productGetSchema,
   employeeSchema,
+  storeUpdateSchema,
 };
