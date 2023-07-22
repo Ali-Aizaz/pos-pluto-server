@@ -7,6 +7,7 @@ const sendEmail = require('../utils/sendEmail');
 const { issueJWT } = require('../utils/issueJwt');
 const advanceResults = require('../middleware/AdvancedResults');
 const { employeeSchema, storeUpdateSchema } = require('../utils/zodConfig');
+const { saveImage } = require('../utils/saveImage');
 
 const verifyEmail = asyncHandler(async (req, res, next) => {
   const emailVerificationToken = crypto

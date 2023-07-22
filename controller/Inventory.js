@@ -89,7 +89,7 @@ const getStoreProducts = async (modal, req, res, next) => {
     product: true,
   };
   try {
-    const { categoryName, search, customerPhone } = z
+    const { categoryName, search, customerPhone, category } = z
       .object({
         categoryName: z
           .string()
@@ -105,30 +105,34 @@ const getStoreProducts = async (modal, req, res, next) => {
           .string()
           .regex(/^\+?\d{3,15}$/)
           .optional(),
+        category: z
+          .string()
+          .min(3, 'category name must be at least 3 characters long')
+          .max(50, 'category name must be at most 50 characters long')
+          .optional(),
       })
       .parse(req.query);
 
     const query = {
       storeId: req.user.storeId,
-    };
-
-    query.product = categoryName && {
-      categoryName: {
-        contains: categoryName,
-        mode: 'insensitive',
+      customerPhone: customerPhone && {
+        contains: customerPhone,
+      },
+      product: {
+        categoryName: category || {
+          contains: categoryName,
+          mode: 'insensitive',
+        },
+        name: search && {
+          name: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        },
       },
     };
 
-    query.product = search && {
-      name: {
-        contains: search,
-        mode: 'insensitive',
-      },
-    };
-
-    query.customerPhone = customerPhone && {
-      contains: customerPhone,
-    };
+    console.log(query, category);
 
     const result = await advancedResult(modal, query, populate);
     return res.json(result);

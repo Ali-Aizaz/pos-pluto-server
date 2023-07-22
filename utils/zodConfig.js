@@ -38,6 +38,11 @@ const productGetSchema = z.object({
     .min(3, 'category name must be at least 3 characters long')
     .max(50, 'category name must be at most 50 characters long')
     .optional(),
+  category: z
+    .string()
+    .min(3, 'category name must be at least 3 characters long')
+    .max(50, 'category name must be at most 50 characters long')
+    .optional(),
   search: z
     .string()
     .min(3, 'product name must be at least 3 characters long')

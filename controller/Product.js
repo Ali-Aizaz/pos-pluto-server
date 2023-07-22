@@ -7,30 +7,36 @@ const { productGetSchema } = require('../utils/zodConfig');
 const { saveImage } = require('../utils/saveImage');
 
 const getProducts = asyncHandler(async (req, res) => {
-  const { categoryName, include, search, all } = productGetSchema.parse(
-    req.query
-  );
+  const { categoryName, include, search, all, category } =
+    productGetSchema.parse(req.query);
 
   const populate = include && {
     category: true,
   };
 
   req.query.categoryName = categoryName && {
-    search: categoryName,
+    contains: categoryName,
+    mode: 'insensitive',
   };
+
+  req.query.categoryName = category && category;
+
   req.query.name = search && {
     contains: search,
     mode: 'insensitive',
   };
 
-  req.query.inventory = !all && {
-    none: {
-      storeId: req.user.storeId,
-    },
-  };
+  req.query.inventory = all
+    ? undefined
+    : {
+        none: {
+          storeId: req.user.storeId,
+        },
+      };
 
   delete req.query.all;
   delete req.query.search;
+  delete req.query.category;
 
   const result = await advancedResults(product, req.query, populate);
   return res.json(result);
