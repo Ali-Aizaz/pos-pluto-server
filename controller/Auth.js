@@ -8,6 +8,7 @@ const { default: StatusCode } = require('status-code-enum');
 const { z } = require('zod');
 const { signUpSchema } = require('../utils/zodConfig');
 const { saveImage } = require('../utils/saveImage');
+const axios = require('axios');
 
 const signUpWithIdPassword = asyncHandler(async (req, res, next) => {
   const { storeName, storeDescription, name, email, password, image } =
@@ -45,7 +46,18 @@ const signUpWithIdPassword = asyncHandler(async (req, res, next) => {
       },
     },
     select: {
-      user: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          provider: true,
+          createdAt: true,
+          updatedAt: true,
+          role: true,
+          isEmailVerified: true,
+        },
+      },
     },
   });
 
@@ -118,59 +130,130 @@ const getEmailProvider = asyncHandler(async (req, res) => {
 });
 
 // Getting Login URL
-// const GoogleAuthURL = asyncHandler((req, res) => {
-//   const rootURL = 'https://accounts.google.com/o/oauth2/v2/auth';
-//   const options = {
-//     redirect_uri: `${process.env.SERVER_ROOT_URI}/api/v1/google/callback`,
-//     client_id: process.env.GOOGLE_CLIENT_ID,
+const GoogleAuthURL = asyncHandler((req, res) => {
+  const rootURL = 'https://accounts.google.com/o/oauth2/v2/auth';
+  const options = {
+    redirect_uri: `${process.env.CLIENT_ROOT_URI}`,
+    client_id: process.env.GOOGLE_CLIENT_ID,
 
-//     access_type: 'offline',
-//     response_type: 'code',
-//     prompt: 'consent',
-//     scope: [
-//       'https://www.googleapis.com/auth/userinfo.profile',
-//       'https://www.googleapis.com/auth/userinfo.email',
-//     ].join(' '),
-//   };
-//   return res.json(`${rootURL}?${querystring.stringify(options)}`);
-// });
+    access_type: 'offline',
+    response_type: 'code',
+    prompt: 'consent',
+    scope: [
+      'https://www.googleapis.com/auth/userinfo.profile',
+      'https://www.googleapis.com/auth/userinfo.email',
+    ].join(' '),
+  };
+  return res.json(`${rootURL}?${new URLSearchParams(options).toString()}`);
+});
 
-// const getTokens = asyncHandler(
-//   async ({ code, clientId, clientSecret, redirectUri }) => {
-//     /*
-//      * Uses the code to get tokens
-//      * that can be used to fetch the user's profile
-//      */
-//     const url = 'https://oauth2.googleapis.com/token';
-//     const values = {
-//       code,
-//       client_id: clientId,
-//       client_secret: clientSecret,
-//       redirect_uri: redirectUri,
-//       grant_type: 'authorization_code',
-//     };
-//     const response = await axios.post(url, querystring.stringify(values), {
-//       headers: {
-//         'Content-Type': 'application/x-www-form-urlencoded',
-//       },
-//     });
-//     return response.data;
-//   }
-// );
+const getTokens = async (code) => {
+  /*
+   * Uses the code to get tokens
+   * that can be used to fetch the user's profile
+   */
 
-// const GoogleUser = asyncHandler(async (req, res, next) => {
-//   const { code } = req.query;
+  const url = 'https://oauth2.googleapis.com/token';
 
-//   const props = await getTokens({
-//     code,
-//     clientId: process.env.GOOGLE_CLIENT_ID,
-//     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-//     redirectUri: `${process.env.SERVER_ROOT_URI}/api/v1/google`,
-//   });
-//   req.body.access_token = props.access_token;
-//   req.body.id_token = props.id_token;
-//   return mobileGoogleLogin(req, res, next);
-// });
+  const values = {
+    code,
+    client_id: process.env.GOOGLE_CLIENT_ID,
+    client_secret: process.env.GOOGLE_CLIENT_SECRET,
+    redirect_uri: process.env.CLIENT_ROOT_URI,
+    grant_type: 'authorization_code',
+  };
+  console.log(new URLSearchParams(values).toString());
+  try {
+    const res = await axios.post(url, new URLSearchParams(values).toString(), {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    });
+    console.log(res);
+    return res.data;
+  } catch (error) {
+    console.log(error.response.data.error);
+    console.log(error, 'Failed to fetch Google Oauth Tokens');
+    throw new Error(error.message);
+  }
+};
+
+const GoogleUser = asyncHandler(async (req, res, next) => {
+  const { code } = req.params;
+
+  const { access_token, id_token } = await getTokens(code);
+
+  const response = await axios.get(
+    `https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${access_token}`,
+    {
+      headers: {
+        authorization: `Bearer ${id_token}`,
+      },
+    }
+  );
+  console.log(response.data);
+  const googleUser = response.data;
+
+  const userData = await user.findUnique({
+    where: {
+      email: googleUser.email,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      provider: true,
+      role: true,
+      createdAt: true,
+      updatedAt: true,
+      isEmailVerified: true,
+    },
+  });
+
+  if (userData)
+    return res
+      .set({
+        authorization: issueJWT(userData.id).token,
+      })
+      .json(userData);
+
+  const newUser = await store.create({
+    data: {
+      name: googleUser.name,
+      description: '',
+      user: {
+        create: {
+          name: googleUser.name,
+          email: googleUser.email,
+          provider: 'GOOGLE',
+          isEmailVerified: googleUser.verified_email,
+          password: bcrypt.hashSync(googleUser.id, 10),
+          resetPasswordExpire: new Date().toISOString(),
+        },
+      },
+    },
+    select: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          provider: true,
+          role: true,
+          createdAt: true,
+          updatedAt: true,
+          isEmailVerified: true,
+        },
+      },
+    },
+  });
+
+  return res
+    .set({
+      authorization: issueJWT(newUser.user[0].id).token,
+    })
+    .json(newUser.user[0]);
+});
 
 const getResetPasswordToken = () => {
   // Generate token
@@ -352,9 +435,9 @@ const resetPassword = asyncHandler(async (req, res, next) => {
 module.exports = {
   signUpWithIdPassword,
   logInWithIdPassword,
-  // GoogleAuthURL,
+  GoogleAuthURL,
   getEmailProvider,
   resetPassword,
   sendPasswordResetEmail,
-  // GoogleUser,
+  GoogleUser,
 };
