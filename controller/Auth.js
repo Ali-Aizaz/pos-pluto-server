@@ -101,6 +101,11 @@ const logInWithIdPassword = asyncHandler(async (req, res, next) => {
     );
   }
 
+  if (result.isEmailVerified === false)
+    return next(
+      new ErrorHandler('email is not verified', StatusCode.ClientErrorForbidden)
+    );
+
   const isValid = bcrypt.compareSync(password, result.password);
 
   if (!isValid)
@@ -167,7 +172,7 @@ const getTokens = async (code) => {
     redirect_uri: process.env.CLIENT_ROOT_URI,
     grant_type: 'authorization_code',
   };
-  console.log(new URLSearchParams(values).toString());
+
   try {
     const res = await axios.post(url, new URLSearchParams(values).toString(), {
       headers: {
@@ -316,7 +321,7 @@ const sendPasswordResetEmail = asyncHandler(async (req, res, next) => {
       subject: 'Reset Password Request',
       text: message,
     });
-    return res.json({ success: true });
+    return res.json('Reset password email sent');
   } catch (err) {
     console.log(err);
     await user.update({
@@ -381,9 +386,17 @@ const resetPassword = asyncHandler(async (req, res, next) => {
 });
 
 const sendVerificationEmail = asyncHandler(async (req, res, next) => {
-  const { user: userData } = req;
+  const { email } = req.params;
+
+  const userData = await user.findUnique({ where: { email } });
+
   if (userData.isEmailVerified) {
-    return next(new ErrorHandler('That email is already verified', 403));
+    return next(
+      new ErrorHandler(
+        'That email is already verified',
+        StatusCode.ClientErrorConflict
+      )
+    );
   }
 
   // Get reset token
@@ -407,7 +420,7 @@ const sendVerificationEmail = asyncHandler(async (req, res, next) => {
       text: `Verification Url: ${verificationUrl}`,
     });
 
-    return res.json({ success: true });
+    return res.json('Email sent successfully');
   } catch (err) {
     console.log(err);
 

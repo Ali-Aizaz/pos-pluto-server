@@ -21,7 +21,7 @@ router.get('/auth/verify-email/:verificationToken', verifyEmail);
 router.get('/auth/get-email-provider', getEmailProvider);
 router.get('/auth/google', GoogleAuthURL);
 router.get('/auth/google/:code', GoogleUser);
-router.get('/auth/send-verification-email', protect, sendVerificationEmail);
+router.get('/auth/send-verification-email/:email', sendVerificationEmail);
 
 router.patch('/auth/reset-password', resetPassword);
 router.patch('/auth/forget-password', sendPasswordResetEmail);

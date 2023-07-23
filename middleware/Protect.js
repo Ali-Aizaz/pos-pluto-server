@@ -2,6 +2,7 @@ const { user } = require('../config');
 const ErrorHandler = require('./ErrorHandler');
 const { verifyToken } = require('../utils/issueJwt');
 const asyncHandler = require('./AsyncHandler');
+const { default: StatusCode } = require('status-code-enum');
 
 const protect = asyncHandler(async (req, res, next) => {
   let token;
@@ -9,29 +10,44 @@ const protect = asyncHandler(async (req, res, next) => {
     token = req.headers.authorization;
   }
   if (!token)
-    return next(new ErrorHandler('Not authorized to access this route', 401));
+    return next(
+      new ErrorHandler(
+        'Not authorized to access this route',
+        StatusCode.ClientErrorUnauthorized
+      )
+    );
   try {
     const decoded = verifyToken(token);
     req.user = await user.findFirst({
       where: {
-        AND: [
-          { id: decoded.sub },
-          {
-            lastCredentialChange: {
-              lte: new Date(decoded.iat).toISOString(),
-            },
-          },
-        ],
+        id: decoded.sub,
+        lastCredentialChange: {
+          lte: new Date(decoded.iat).toISOString(),
+        },
       },
     });
     if (!req.user) {
       return next(new ErrorHandler('Invalid Tokens', 401));
     }
+
+    if (req.user.isEmailVerified === false)
+      return next(
+        new ErrorHandler(
+          'email is not verified',
+          StatusCode.ClientErrorForbidden
+        )
+      );
+
     delete user.password;
     return next();
   } catch (err) {
     console.log(err);
-    return next(new ErrorHandler('Not authorized to access this route', 401));
+    return next(
+      new ErrorHandler(
+        'Not authorized to access this route',
+        StatusCode.ClientErrorUnauthorized
+      )
+    );
   }
 });
 
