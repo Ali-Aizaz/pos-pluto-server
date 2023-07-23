@@ -3,12 +3,17 @@ const asyncHandler = require('../middleware/AsyncHandler');
 const { issueJWT } = require('../utils/issueJwt');
 const { user, store } = require('../config');
 const ErrorHandler = require('../middleware/ErrorHandler');
-const { sendEmail } = require('../utils/sendEmail');
+const sendEmail = require('../utils/sendEmail');
 const { default: StatusCode } = require('status-code-enum');
 const { z } = require('zod');
-const { signUpSchema } = require('../utils/zodConfig');
+const { signUpSchema, resetPasswordSchema } = require('../utils/zodConfig');
 const { saveImage } = require('../utils/saveImage');
 const axios = require('axios');
+const crypto = require('crypto');
+const {
+  getEmailVerificationToken,
+  getResetPasswordToken,
+} = require('../utils/tokens');
 
 const signUpWithIdPassword = asyncHandler(async (req, res, next) => {
   const { storeName, storeDescription, name, email, password, image } =
@@ -169,7 +174,6 @@ const getTokens = async (code) => {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
     });
-    console.log(res);
     return res.data;
   } catch (error) {
     console.log(error.response.data.error);
@@ -191,7 +195,6 @@ const GoogleUser = asyncHandler(async (req, res, next) => {
       },
     }
   );
-  console.log(response.data);
   const googleUser = response.data;
 
   const userData = await user.findUnique({
@@ -255,19 +258,6 @@ const GoogleUser = asyncHandler(async (req, res, next) => {
     .json(newUser.user[0]);
 });
 
-const getResetPasswordToken = () => {
-  // Generate token
-  const resetPasswordToken = crypto
-    .randomInt(1000000)
-    .toString()
-    .padStart(6, '0');
-
-  // Set expire
-  const resetPasswordExpire = Date.now() + 10 * 60 * 1000;
-
-  return { resetPasswordToken, resetPasswordExpire };
-};
-
 const sendPasswordResetEmail = asyncHandler(async (req, res, next) => {
   const { email } = z
     .object({
@@ -299,14 +289,15 @@ const sendPasswordResetEmail = asyncHandler(async (req, res, next) => {
 
   // Get reset token
   const resetToken = getResetPasswordToken();
-  await user.update(
-    {
-      validateBeforeSave: false,
+
+  await user.update({
+    data: {
       resetPasswordExpire: resetToken.resetPasswordExpire,
       resetPasswordToken: resetToken.resetPasswordToken,
     },
-    { where: { email } }
-  );
+    where: { email },
+  });
+
   const message = `Hi ${selectedUser.name},
   You've requested to reset the password linked with your POS Pluto account.
   To confirm your request, please use the 6-digit code below:
@@ -328,14 +319,13 @@ const sendPasswordResetEmail = asyncHandler(async (req, res, next) => {
     return res.json({ success: true });
   } catch (err) {
     console.log(err);
-    await user.update(
-      {
-        validateBeforeSave: false,
+    await user.update({
+      data: {
         resetPasswordToken: null,
         resetPasswordExpire: null,
       },
-      { where: { email } }
-    );
+      where: { email },
+    });
 
     return next(
       new ErrorHandler(
@@ -347,40 +337,39 @@ const sendPasswordResetEmail = asyncHandler(async (req, res, next) => {
 });
 
 const resetPassword = asyncHandler(async (req, res, next) => {
-  const { newPassword, resetPasswordToken } = z
-    .object({
-      newPassword: z
-        .string()
-        .regex(
-          /^(?=[^a-z]*[a-z])(?=[^A-Z]*[A-Z])(?=D*d)(?=[^!#%]*[!#%])[A-Za-z0-9!#%]{8,32}$/
-        ),
-      resetPasswordToken: z.string(),
-    })
-    .parse(req.body);
-
-  const hash = await bcrypt.hash(newPassword, 10);
-  const updatedUser = await user.update(
-    {
-      password: hash,
-      lastCredentialChange: Date.now(),
-      resetPasswordToken: null,
-      resetPasswordExpire: null,
-    },
-    {
-      where: {
-        AND: [
-          { resetPasswordToken },
-          { resetPasswordExpire: { gt: Date.now() } },
-        ],
-      },
-    }
+  const { newPassword, resetPasswordToken } = resetPasswordSchema.parse(
+    req.body
   );
 
-  if (!updatedUser) {
+  const hash = await bcrypt.hash(newPassword, 10);
+
+  const selectedUser = await user.findFirst({
+    where: {
+      resetPasswordToken,
+      resetPasswordExpire: {
+        gt: new Date(Date.now()),
+      },
+    },
+  });
+
+  if (!selectedUser) {
     return next(
       new ErrorHandler('Invalid token', StatusCode.ClientErrorUnauthorized)
     );
   }
+
+  const updatedUser = await user.update({
+    data: {
+      password: hash,
+      lastCredentialChange: new Date(Date.now()),
+      resetPasswordToken: undefined,
+      resetPasswordExpire: undefined,
+    },
+
+    where: {
+      id: selectedUser.id,
+    },
+  });
 
   const jwt = issueJWT(updatedUser.id);
   res.set({
@@ -391,46 +380,76 @@ const resetPassword = asyncHandler(async (req, res, next) => {
   return res.json('success');
 });
 
-// const sendVerificationEmail = asyncHandler(async (req, res, next) => {
-//   const user = req.user;
-//   if (user.isEmailVerified) {
-//     return next(new ErrorHandler("That email is already verified", 403));
-//   }
+const sendVerificationEmail = asyncHandler(async (req, res, next) => {
+  const { user: userData } = req;
+  if (userData.isEmailVerified) {
+    return next(new ErrorHandler('That email is already verified', 403));
+  }
 
-//   // Get reset token
-//   const verifications = getEmailVerificationToken();
+  // Get reset token
+  const verifications = getEmailVerificationToken();
 
-//   await user.update(
-//     {
-//       validateBeforeSave: false,
-//       emailVerificationToken: verifications.emailVerificationToken,
-//     },
-//     {
-//       where: {
-//         id: user.id,
-//       },
-//     }
-//   );
-//   const verificationUrl = `${process.env.SERVER_ROOT_URI}/api/v1/verify-email/${verifications.verificationToken}`;
-//   verificationUrl;
+  await user.update({
+    data: {
+      emailVerificationToken: verifications.emailVerificationToken,
+    },
+    where: {
+      id: userData.id,
+    },
+  });
 
-//   try {
-//     await sendEmail({
-//       email: user.email,
-//       subject: "Email Verification Request",
-//       text: `Verification Url: ${verificationUrl}`,
-//     });
+  const verificationUrl = `${process.env.SERVER_ROOT_URI}/api/v1/auth/verify-email/${verifications.verificationToken}`;
 
-//     return res.json({ success: true });
-//   } catch (err) {
-//     console.log(err);
-//     user.emailVerificationToken = null;
+  try {
+    await sendEmail({
+      email: userData.email,
+      subject: 'Email Verification Request',
+      text: `Verification Url: ${verificationUrl}`,
+    });
 
-//     await user.save({ validateBeforeSave: false });
+    return res.json({ success: true });
+  } catch (err) {
+    console.log(err);
 
-//     return next(new ErrorHandler("Email could not be sent", 500));
-//   }
-// });
+    await user.update({
+      data: {
+        emailVerificationToken: null,
+      },
+      where: {
+        id: userData.id,
+      },
+    });
+
+    return next(new ErrorHandler('Email could not be sent', 500));
+  }
+});
+
+const verifyEmail = asyncHandler(async (req, res, next) => {
+  const emailVerificationToken = crypto
+    .createHash('sha256')
+    .update(req.params.verificationToken)
+    .digest('hex');
+
+  const selectUser = await user.findFirst({
+    where: { emailVerificationToken },
+  });
+
+  if (!selectUser) {
+    return next(new ErrorResponse('Invalid token', 401));
+  }
+
+  await user.update({
+    where: {
+      id: selectUser.id,
+    },
+    data: {
+      isEmailVerified: true,
+      emailVerificationToken: null,
+    },
+  });
+
+  return res.redirect(process.env.CLIENT_ROOT_URI);
+});
 
 module.exports = {
   signUpWithIdPassword,
@@ -440,4 +459,6 @@ module.exports = {
   resetPassword,
   sendPasswordResetEmail,
   GoogleUser,
+  sendVerificationEmail,
+  verifyEmail,
 };

@@ -1,4 +1,4 @@
-const { z } = require('zod');
+const { z, ZodError } = require('zod');
 
 const signUpSchema = z.object({
   storeName: z
@@ -95,9 +95,26 @@ const storeUpdateSchema = z
     message: 'At least one field must be present',
   });
 
+const resetPasswordSchema = z.object({
+  newPassword: z
+    .string()
+    .regex(new RegExp('.*[A-Z].*'), 'One uppercase character')
+    .regex(new RegExp('.*[a-z].*'), 'One lowercase character')
+    .regex(new RegExp('.*\\d.*'), 'One number')
+    .regex(
+      new RegExp('.*[`~<>?,./!@#$%^&*()\\-_+="\'|{}\\[\\];:\\\\].*'),
+      'One special character'
+    ),
+  resetPasswordToken: z
+    .string()
+    .max(6, 'the reset password token is of 6 characters')
+    .min(6, 'the reset password token is of 6 characters'),
+});
+
 module.exports = {
   signUpSchema,
   productGetSchema,
   employeeSchema,
   storeUpdateSchema,
+  resetPasswordSchema,
 };

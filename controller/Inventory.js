@@ -132,8 +132,6 @@ const getStoreProducts = async (modal, req, res, next) => {
       },
     };
 
-    console.log(query, category);
-
     const result = await advancedResult(modal, query, populate);
     return res.json(result);
   } catch (e) {
