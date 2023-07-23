@@ -83,20 +83,18 @@ exports.isInvetoryManager = (req, res, next) => {
 };
 
 exports.isStoreOwner = (req, res, next) => {
-  exports.isInvetoryManager = (req, res, next) => {
-    if (
-      req.user.roles === 'SALESMANAGER' ||
-      req.user.roles === 'INVENTORYMANAGER'
-    )
-      return next(
-        new ErrorHandler(
-          'Not authorized to access this route',
-          StatusCode.ClientErrorUnauthorized
-        )
-      );
+  if (
+    req.user.roles === 'SALESMANAGER' ||
+    req.user.roles === 'INVENTORYMANAGER'
+  )
+    return next(
+      new ErrorHandler(
+        'Not authorized to access this route',
+        StatusCode.ClientErrorUnauthorized
+      )
+    );
 
-    return next();
-  };
+  return next();
 };
 
 exports.protect = protect;

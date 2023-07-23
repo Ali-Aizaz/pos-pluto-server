@@ -48,11 +48,13 @@ const isEmailAvailable = asyncHandler(async (req, res) => {
   });
   return res
     .status(result ? StatusCode.ClientErrorConflict : StatusCode.SuccessOK)
-    .end();
+    .json('');
 });
 
 const changePassword = asyncHandler(async (req, res, next) => {
-  const selectedUser = await user.findUnique({ email: req.email });
+  const selectedUser = await user.findUnique({
+    where: { email: req.user.email },
+  });
   let isValid = true;
 
   if (!req.user.role === 'ADMIN') {
@@ -67,7 +69,7 @@ const changePassword = asyncHandler(async (req, res, next) => {
     await user.update({
       where: { id: req.user.id },
       data: {
-        lastCredentialChange: Date.now(),
+        lastCredentialChange: new Date(Date.now()),
         password: hash,
       },
     });
@@ -79,12 +81,12 @@ const changePassword = asyncHandler(async (req, res, next) => {
       authorization: jwt.token,
     });
 
-    return res.status(StatusCode.SuccessOK).end();
+    return res.status(StatusCode.SuccessOK).json('');
   }
 
   return next(
     new ErrorHandler('Invalid Password'),
-    StatusCode.ClientErrorUnauthorized
+    StatusCode.ClientErrorBadRequest
   );
 });
 
@@ -95,7 +97,7 @@ const currentUser = asyncHandler(async (req, res) => {
 const getEmployees = asyncHandler(async (req, res) => {
   req.query = {
     storeId: req.user.storeId,
-    role: 'STOREEMPLOYEE',
+    OR: [{ role: 'SALESMANAGER' }, { role: 'INVENTORYMANAGER' }],
   };
 
   const result = await advanceResults(user, req.query);
@@ -111,7 +113,7 @@ const createEmployee = asyncHandler(async (req, res, next) => {
       data: {
         name,
         email,
-        password,
+        password: bcrypt.hashSync(password, 10),
         resetPasswordExpire: new Date(Date.now()),
         provider: 'EMAIL',
         role,
