@@ -4,11 +4,11 @@ const {
   getProductById,
   createProduct,
 } = require('../controller/Product');
-const { protect } = require('../middleware/Protect');
+const { protect, isInvetoryManager } = require('../middleware/Protect');
 
-router.get('/products', protect, getProducts);
-router.get('/products/:id', protect, getProductById);
+router.get('/products', protect, isInvetoryManager, getProducts);
+router.get('/products/:id', protect, isInvetoryManager, getProductById);
 
-router.post('/products', protect, createProduct);
+router.post('/products', protect, isInvetoryManager, createProduct);
 
 module.exports = router;

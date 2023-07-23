@@ -62,6 +62,7 @@ const employeeSchema = z.object({
     .email('text is not of type email')
     .min(3, 'minimum 3 characters required for email')
     .max(50, 'maximum 50 characters accepted for email'),
+  role: z.enum(['SALESMANAGER', 'INVENTORYMANAGER', 'STOREOWNER']),
   password: z
     .string()
     .regex(new RegExp('.*[A-Z].*'), 'One uppercase character')
@@ -111,10 +112,33 @@ const resetPasswordSchema = z.object({
     .min(6, 'the reset password token is of 6 characters'),
 });
 
+const StoreSearchSchemas = z.object({
+  categoryName: z
+    .string()
+    .min(3, 'category name must be at least 3 characters long')
+    .max(50, 'category name must be at most 50 characters long')
+    .optional(),
+  search: z
+    .string()
+    .min(3, 'product name must be at least 3 characters long')
+    .max(50, 'product name must be at most 50 characters long')
+    .optional(),
+  customerPhone: z
+    .string()
+    .regex(/^\+?\d{3,15}$/)
+    .optional(),
+  category: z
+    .string()
+    .min(3, 'category name must be at least 3 characters long')
+    .max(50, 'category name must be at most 50 characters long')
+    .optional(),
+});
+
 module.exports = {
   signUpSchema,
   productGetSchema,
   employeeSchema,
   storeUpdateSchema,
   resetPasswordSchema,
+  StoreSearchSchemas,
 };

@@ -10,8 +10,6 @@ const {
   verifyEmail,
 } = require('../controller/Auth');
 
-const { protect } = require('../middleware/Protect');
-
 const router = require('express').Router();
 
 router.post('/auth/signup', signUpWithIdPassword);

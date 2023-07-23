@@ -11,31 +11,31 @@ module.exports = async function ({ store }) {
     data: {
       name: 'Aslam Store',
       description: 'Electronics Store',
-      imageUrl:
-        'https://pluto-uploads.s3.ap-southeast-1.amazonaws.com/de0e85e99ff41c085d786008f36ad84725b2a83e.jpeg?AWSAccessKeyId=AKIASIXNQ5QA3LDBZ2IR&Expires=1689872144&Signature=m0o067y12Inrd2LYyK3Powdu8gM%3D',
+      imageUrl: 'de0e85e99ff41c085d786008f36ad84725b2a83e.jpeg',
+      employeeCount: 2,
       user: {
         create: [
           {
-            name: 'Tofu',
-            email: 'tofu@gmail.com',
-            password: bcrypt.hashSync('Tofu@123456', 10),
+            name: 'Ali Aizaz',
+            email: 'aliaizaz420@gmail.com',
+            password: bcrypt.hashSync('AliAizaz@123456', 10),
             provider: 'EMAIL',
             role: 'STOREOWNER',
             isEmailVerified: true,
           },
           {
-            name: 'Jack',
-            email: 'jack@gmail.com',
-            password: bcrypt.hashSync('Jack@123456', 10),
+            name: 'Owais Ali',
+            email: 'aliaizaz124124@gmail.com',
+            password: bcrypt.hashSync('AliAizaz@123456', 10),
             provider: 'EMAIL',
-            role: 'STOREEMPLOYEE',
+            role: 'SALESMANAGER',
           },
           {
-            name: 'Harry',
-            email: 'harry@gmail.com',
-            password: bcrypt.hashSync('Harry@123456', 10),
+            name: 'Ayaan',
+            email: 'aliaizazco@gmail.com',
+            password: bcrypt.hashSync('AliAizaz@123456', 10),
             provider: 'EMAIL',
-            role: 'STOREEMPLOYEE',
+            role: 'INVENTORYMANAGER',
           },
         ],
       },
@@ -46,23 +46,23 @@ module.exports = async function ({ store }) {
     data: {
       name: 'General Store',
       description: 'General Store for your everyday needs',
-      imageUrl:
-        'https://pluto-uploads.s3.ap-southeast-1.amazonaws.com/8a916e2059588322eba9628c161922b23bb6370b.jpeg?AWSAccessKeyId=AKIASIXNQ5QA3LDBZ2IR&Expires=1689874405&Signature=qPm7CVnNE1qoFN2aod9JjEf4iMw%3D',
+      imageUrl: '8a916e2059588322eba9628c161922b23bb6370b.jpeg',
+      employeeCount: 1,
       user: {
         create: [
           {
-            name: 'James',
-            email: 'james@gmail.com',
+            name: 'Raheel Hussain',
+            email: 'raheelhussainco@gmail.com',
             password: bcrypt.hashSync('James@123456', 10),
             provider: 'EMAIL',
             role: 'STOREOWNER',
           },
           {
-            name: 'Ryan',
-            email: 'ryan@gmail.com',
+            name: 'Owais Ali',
+            email: 'owais@gmail.com',
             password: bcrypt.hashSync('Ryan@123456', 10),
             provider: 'EMAIL',
-            role: 'STOREEMPLOYEE',
+            role: 'SALESMANAGER',
           },
         ],
       },

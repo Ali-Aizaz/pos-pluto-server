@@ -417,7 +417,7 @@ const sendVerificationEmail = asyncHandler(async (req, res, next) => {
     await sendEmail({
       email: userData.email,
       subject: 'Email Verification Request',
-      text: `Verification Url: ${verificationUrl}`,
+      text: `Hi ${userData.name}, your Verification Url: ${verificationUrl}`,
     });
 
     return res.json('Email sent successfully');

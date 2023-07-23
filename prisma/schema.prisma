@@ -117,17 +117,20 @@ model Warranty {
 }
 
 model Store {
-  id          String      @id @default(auto()) @map("_id") @db.ObjectId
-  name        String
-  description String
-  imageUrl    String?
-  createdAt   DateTime    @default(now()) @db.Timestamp
-  updatedAt   DateTime    @updatedAt @db.Timestamp
-  user        User[]
-  inventory   Inventory[]
-  sold        Sold[]
-  returned    Returned[]
-  warranty    Warranty[]
+  id            String      @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  description   String
+  imageUrl      String?
+  salesBalance  Int         @default(0) @db.Int
+  orderCount    Int         @default(0) @db.Int
+  employeeCount Int         @default(0) @db.Int
+  createdAt     DateTime    @default(now()) @db.Timestamp
+  updatedAt     DateTime    @updatedAt @db.Timestamp
+  user          User[]
+  inventory     Inventory[]
+  sold          Sold[]
+  returned      Returned[]
+  warranty      Warranty[]
 }
 
 enum Provider {
@@ -136,7 +139,8 @@ enum Provider {
 }
 
 enum Role {
-  STOREEMPLOYEE
+  INVENTORYMANAGER
+  SALESMANAGER
   STOREOWNER
   ADMIN
 }

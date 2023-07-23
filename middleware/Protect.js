@@ -38,7 +38,7 @@ const protect = asyncHandler(async (req, res, next) => {
         )
       );
 
-    delete user.password;
+    delete req.user.password;
     return next();
   } catch (err) {
     console.log(err);
@@ -58,23 +58,45 @@ exports.isAdmin = (req, res, next) => {
   return next();
 };
 
-// exports.isActive = async (req, res, next) => {
-//   if (!req.user.isAdmin) {
-//     if (!req.user.isEmailVerified) {
-//       return next(new ErrorHandler("Email not verified", 401));
-//     } else if (!req.user.isActive) {
-//       return next(new ErrorHandler("Payment not active", 401));
-//     }
-//   }
-//   next();
-// };
+exports.isSalesManager = (req, res, next) => {
+  if (req.user.roles === 'INVENTORYMANAGER')
+    return next(
+      new ErrorHandler(
+        'Not authorized to access this route',
+        StatusCode.ClientErrorUnauthorized
+      )
+    );
 
-// exports.setEmail = async (req, res, next) => {
-//   if (req.user.isAdmin && req.body.email) {
-//     req.email = req.body.email;
-//   } else {
-//     req.email = req.user.email;
-//   }
-//   next();
-// };
+  return next();
+};
+
+exports.isInvetoryManager = (req, res, next) => {
+  if (req.user.roles === 'SALESMANAGER')
+    return next(
+      new ErrorHandler(
+        'Not authorized to access this route',
+        StatusCode.ClientErrorUnauthorized
+      )
+    );
+
+  return next();
+};
+
+exports.isStoreOwner = (req, res, next) => {
+  exports.isInvetoryManager = (req, res, next) => {
+    if (
+      req.user.roles === 'SALESMANAGER' ||
+      req.user.roles === 'INVENTORYMANAGER'
+    )
+      return next(
+        new ErrorHandler(
+          'Not authorized to access this route',
+          StatusCode.ClientErrorUnauthorized
+        )
+      );
+
+    return next();
+  };
+};
+
 exports.protect = protect;

@@ -3,35 +3,14 @@ const { default: StatusCode } = require('status-code-enum');
 const { user, store } = require('../config');
 const asyncHandler = require('../middleware/AsyncHandler');
 const ErrorHandler = require('../middleware/ErrorHandler');
-const sendEmail = require('../utils/sendEmail');
 const { issueJWT } = require('../utils/issueJwt');
 const advanceResults = require('../middleware/AdvancedResults');
 const { employeeSchema, storeUpdateSchema } = require('../utils/zodConfig');
 const { saveImage } = require('../utils/saveImage');
-
-const verifyEmail = asyncHandler(async (req, res, next) => {
-  const emailVerificationToken = crypto
-    .createHash('sha256')
-    .update(req.params.verificationToken)
-    .digest('hex');
-  const updatedUser = await user.update({
-    where: { emailVerificationToken },
-    data: {
-      isEmailVerified: true,
-      emailVerificationToken: null,
-    },
-  });
-  if (!updatedUser) {
-    return next(
-      new ErrorHandler('Invalid token', StatusCode.ClientErrorUnauthorized)
-    );
-  }
-
-  return res.json({ result: 'Email is successfully verified ' });
-});
+const prisma = require('../config');
 
 const getUserByEmail = asyncHandler(async (req, res, next) => {
-  const { email } = req.body;
+  const { email } = req.params;
   if (!email) {
     return next(
       new ErrorHandler(
@@ -45,7 +24,8 @@ const getUserByEmail = asyncHandler(async (req, res, next) => {
     where: { email },
     select: {
       email: true,
-      image: true,
+      role: true,
+      provider: true,
       id: true,
       createdAt: true,
       isEmailVerified: true,
@@ -60,70 +40,6 @@ const getUserByEmail = asyncHandler(async (req, res, next) => {
   }
 
   return res.json(selectedUser);
-});
-
-const getEmailVerificationToken = () => {
-  // Generate token
-  const verificationToken = crypto.randomBytes(32).toString('hex');
-
-  // Hash token and set to resetPasswordToken field
-  const emailVerificationToken = crypto
-    .createHash('sha256')
-    .update(verificationToken)
-    .digest('hex');
-
-  return { verificationToken, emailVerificationToken };
-};
-
-const sendVerificationEmail = asyncHandler(async (req, res, next) => {
-  const { isEmailVerified, email, id, name } = req.user;
-  if (isEmailVerified) {
-    return next(
-      new ErrorHandler(
-        'That email is already verified',
-        StatusCode.ClientErrorConflict
-      )
-    );
-  }
-
-  // Get reset token
-  const verifications = getEmailVerificationToken();
-
-  await user.update(
-    {
-      validateBeforeSave: false,
-      emailVerificationToken: verifications.emailVerificationToken,
-    },
-    {
-      where: {
-        id,
-      },
-    }
-  );
-  const verificationUrl = `${process.env.SERVER_ROOT_URI}/api/v1/verify-email/${verifications.verificationToken}`;
-
-  try {
-    await sendEmail({
-      email,
-      subject: 'Email Verification Request',
-      text: `Hi ${name}, your Verification Url: ${verificationUrl}`,
-    });
-
-    return res.status(StatusCode.SuccessOK).end();
-  } catch (err) {
-    console.log(err);
-    await user.update({
-      where: { id },
-      data: { emailVerificationToken: null, validateBeforeSave: false },
-    });
-
-    return next(
-      new ErrorHandler(
-        'Email could not be sent',
-        StatusCode.ClientErrorBadRequest
-      )
-    );
-  }
 });
 
 const isEmailAvailable = asyncHandler(async (req, res) => {
@@ -188,19 +104,29 @@ const getEmployees = asyncHandler(async (req, res) => {
 });
 
 const createEmployee = asyncHandler(async (req, res, next) => {
-  const { name, password, email } = employeeSchema.parse(req.body);
+  const { name, password, email, role } = employeeSchema.parse(req.body);
 
-  const result = await user.create({
-    data: {
-      name,
-      email,
-      password,
-      resetPasswordExpire: new Date().toISOString(),
-      provider: 'EMAIL',
-      role: 'STOREEMPLOYEE',
-      storeId: req.user.storeId,
-    },
-  });
+  const [result] = await prisma.$transaction([
+    user.create({
+      data: {
+        name,
+        email,
+        password,
+        resetPasswordExpire: new Date(Date.now()),
+        provider: 'EMAIL',
+        role,
+        storeId: req.user.storeId,
+      },
+    }),
+    store.update({
+      where: { id: req.user.storeId },
+      data: {
+        employeeCount: {
+          increment: 1,
+        },
+      },
+    }),
+  ]);
 
   return res.json(result);
 });
@@ -266,9 +192,7 @@ const getStore = asyncHandler(async (req, res) => {
 
 module.exports = {
   isEmailAvailable,
-  sendVerificationEmail,
   getUserByEmail,
-  verifyEmail,
   changePassword,
   currentUser,
   getEmployees,

@@ -1,10 +1,10 @@
 const { default: StatusCode } = require('status-code-enum');
-const { inventory, returned, warranty, sold } = require('../config');
+const { inventory, returned, warranty, sold, store } = require('../config');
 const asyncHandler = require('../middleware/AsyncHandler');
 const ErrorHandler = require('../middleware/ErrorHandler');
 const advancedResult = require('../middleware/AdvancedResults');
 const prisma = require('../config');
-const { z } = require('zod');
+const { StoreSearchSchemas } = require('../utils/zodConfig');
 
 const sellProduct = asyncHandler(async (req, res, next) => {
   const { inventoryData, name, phone } = req.body;
@@ -47,6 +47,16 @@ const sellProduct = asyncHandler(async (req, res, next) => {
       )
     );
 
+  const calcResult = inventoryData.reduce(
+    (acc, item) => {
+      return {
+        totalPrice: acc.totalPrice + item.price * item.count,
+        totalCount: acc.totalCount + item.count,
+      };
+    },
+    { totalPrice: 0, totalCount: 0 }
+  );
+
   return prisma.$transaction(async (tx) => {
     const soldItems = inventoryData.map((item) => {
       return {
@@ -78,6 +88,22 @@ const sellProduct = asyncHandler(async (req, res, next) => {
       })
     );
 
+    transactionArray.push(
+      tx.store.update({
+        where: {
+          id: req.user.storeId,
+        },
+        data: {
+          salesBalance: {
+            increment: calcResult.totalPrice,
+          },
+          orderCount: {
+            increment: calcResult.totalCount,
+          },
+        },
+      })
+    );
+
     const [result] = await Promise.all(transactionArray);
 
     return res.json(result);
@@ -89,29 +115,8 @@ const getStoreProducts = async (modal, req, res, next) => {
     product: true,
   };
   try {
-    const { categoryName, search, customerPhone, category } = z
-      .object({
-        categoryName: z
-          .string()
-          .min(3, 'category name must be at least 3 characters long')
-          .max(50, 'category name must be at most 50 characters long')
-          .optional(),
-        search: z
-          .string()
-          .min(3, 'product name must be at least 3 characters long')
-          .max(50, 'product name must be at most 50 characters long')
-          .optional(),
-        customerPhone: z
-          .string()
-          .regex(/^\+?\d{3,15}$/)
-          .optional(),
-        category: z
-          .string()
-          .min(3, 'category name must be at least 3 characters long')
-          .max(50, 'category name must be at most 50 characters long')
-          .optional(),
-      })
-      .parse(req.query);
+    const { categoryName, search, customerPhone, category } =
+      StoreSearchSchemas.parse(req.query);
 
     const query = {
       storeId: req.user.storeId,
@@ -216,6 +221,19 @@ const manageInventory = asyncHandler(async (req, res, next) => {
         customerName: selectSold.customerName,
         customerPhone: selectSold.customerPhone,
         storeId: selectSold.storeId,
+      },
+    }),
+    store.update({
+      where: {
+        id: req.user.storeId,
+      },
+      data: {
+        salesBalance: {
+          decrement: selectSold.price * count,
+        },
+        orderCount: {
+          decrement: count,
+        },
       },
     }),
     count === selectSold.count
