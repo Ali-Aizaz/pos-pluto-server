@@ -34,7 +34,7 @@ const protect = asyncHandler(async (req, res, next) => {
       return next(
         new ErrorHandler(
           'email is not verified',
-          StatusCode.ClientErrorForbidden
+          StatusCode.ClientErrorUnauthorized
         )
       );
 
